@@ -1,0 +1,23 @@
+1. Add employee table
+2. Go to bill and put everythings cascade
+3. Go to customer and put everythings cascade
+
+mysqldump -u sql_mzingamaji_c -p sql_mzingamaji_c > mzinga_maji_new.sql
+password = NEs578aPybpeTe6P
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- Drop all tables
+SET @tables = NULL;
+SELECT GROUP_CONCAT('`', table_name, '`') INTO @tables
+FROM information_schema.tables
+WHERE table_schema = 'sql_mzingamaji_c';
+
+SET @tables = CONCAT('DROP TABLE IF EXISTS ', @tables);
+PREPARE stmt FROM @tables;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+mysql -u sql_mzingamaji_c -p sql_mzingamaji_c < ./mzinga_system_1.sql

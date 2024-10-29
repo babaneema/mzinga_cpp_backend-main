@@ -1,0 +1,361 @@
+#pragma once
+#include "core/database.hxx"
+#include "core/server.hxx"
+#include <boost/json.hpp>
+#include "controllers/customerController.hxx"
+#include "controllers/branchController.hxx"
+#include "http/meterHttp.hxx"
+#include "http/billHttp.hxx"
+#include "http/paymentHttp.hxx"
+
+#include <boost/shared_ptr.hpp>
+
+class CustomerHttp{
+public:
+    static boost::json::object customer_to_json(const boost::shared_ptr<customer> cu) {
+        if(cu){
+            return {
+                {"customer_id", cu->get_customer_id()},
+                {"customer_unique", cu->get_customer_unique()},
+                {"customer_name", cu->get_customer_name()},
+                {"customer_gender", cu->get_customer_gender()},
+                {"customer_contact", cu->get_customer_contact()},
+                {"customer_address", cu->get_customer_address()},
+                {"customer_house_number", cu->get_customer_house_number()},
+                {"customer_reg_date", cu->get_customer_reg_date()},
+                {
+                    "branch_name", cu->get_customer_branch()->get_branch_name()
+                },
+            };
+        }
+        return {};
+    }
+
+    static boost::json::array customers_to_json(const std::vector<boost::shared_ptr<customer>> customers) {
+        boost::json::array json_array;
+        for (const auto& cr : customers) {
+            json_array.emplace_back(customer_to_json(cr));
+        }
+        return json_array;
+    }
+
+    static void get(
+        std::shared_ptr<odb::mysql::database>  & handle,
+        const http::request<http::string_body>& req, 
+        http::response<http::string_body>& res
+        )
+    {
+        if (req.method() == http::verb::get) {
+            std::cout << "http::verb::get called" <<endl;
+
+            auto customers = CustomerController::getAllCustomers(handle);
+            auto customers_json = customers_to_json(customers);
+            std::string jsonString = boost::json::serialize(customers_json);
+
+            res.set(http::field::content_type, "application/json");
+            res.body() = jsonString;
+            res.prepare_payload();
+        }
+    }
+
+    static void get_uiid_full_data(
+        std::shared_ptr<odb::mysql::database>  & handle,
+        const http::request<http::string_body>& req, 
+        http::response<http::string_body>& res, 
+        const std::unordered_map<std::string, std::string>& query_params
+        )
+    {
+        auto uuid = query_params.find("uuid");
+        if (uuid != query_params.end()) {
+            boost::json::object response_json;
+
+            // Get first customer data
+            std::string customer_uui = uuid->second;
+            auto customer = CustomerController::getCustomerByUiid(handle, customer_uui);
+            auto custommer_json = customer_to_json(customer);
+            response_json["user_data"] = custommer_json;
+
+            // get meter data
+            auto meters = MeterController::getMeterByCustomerId(handle,customer->get_customer_id());
+            auto meters_json = MeterHttp::meters_to_json(meters);
+            response_json["meters_data"] = meters_json;
+
+            // Now let get bills data
+            auto bills = BillController::getBillsByCustomerId(handle,customer->get_customer_id());
+            auto bills_json = BillHttp::bills_to_json(bills);
+            response_json["bills_data"] = bills_json;
+
+            // Now let get bills data
+            auto payments_d = PaymentController::getPaymentsByCustomerId(handle,customer->get_customer_id());
+            auto payments_d_json = PaymentHttp::payments_to_json(payments_d);
+            response_json["payments_data"] = payments_d_json;
+
+            std::string jsonString = boost::json::serialize(response_json);
+
+            res.set(http::field::content_type, "application/json");
+            res.body() = jsonString;
+            res.prepare_payload();
+        }
+
+    }
+
+    static void getCustomerById(
+        std::shared_ptr<odb::mysql::database>  & handle,
+        const http::request<http::string_body>& req, 
+        http::response<http::string_body>& res, 
+        const std::unordered_map<std::string, std::string>& query_params
+        )
+    {
+        auto id = query_params.find("id");
+        if (id != query_params.end()) {
+            std::cout<< "Called  void getCustomerById" <<endl;
+            boost::json::object response_json;
+
+            // Get first customer data
+            std::string customer_id = id->second;
+            std::cout<< "Called  customer_id " << customer_id <<endl;
+            int customer_id_int = std::stoi(customer_id);
+            std::cout << "Called  customer_id_int " << customer_id_int <<endl;
+            auto customer = CustomerController::getCustomerById(handle, customer_id_int);
+            auto custommer_json = customer_to_json(customer);
+            response_json["customer_data"] = custommer_json;
+
+
+            std::string jsonString = boost::json::serialize(response_json);
+
+            res.set(http::field::content_type, "application/json");
+            res.body() = jsonString;
+            res.prepare_payload();
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
+
+    }
+    
+    // Get Customer Report 
+    static void getCustomerReport(
+        std::shared_ptr<odb::mysql::database>  & handle,
+        const http::request<http::string_body>& req, 
+        http::response<http::string_body>& res, 
+        const std::unordered_map<std::string, std::string>& query_params
+        )
+    {
+        auto report = query_params.find("report");
+        if(report != query_params.end()){
+            std::cout<< "Called  void getCustomerReport" <<endl;
+
+            auto start_date = query_params.find("start_date");
+            auto end_date = query_params.find("end_date");
+
+            std::string start_ =  start_date->second;
+            std::string end_ =  end_date->second;
+
+
+            boost::json::object response_json;
+
+            auto customers_data = CustomerController::GetCustomerReport(handle, start_, end_);
+            auto customers_json = customers_to_json(customers_data);
+            response_json["customers_data"] = customers_json;
+
+            std::string jsonString = boost::json::serialize(response_json);
+
+            res.set(http::field::content_type, "application/json");
+            res.body() = jsonString;
+            res.prepare_payload();
+        }
+
+    }
+
+    // Handle POST request to create a customer
+    static void post(
+        std::shared_ptr<odb::mysql::database>& handle,
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res
+    ) {
+        if (req.method() == http::verb::post) {
+            std::cout << "http::verb::post Customer called" << std::endl;
+            boost::json::value parsedValue = boost::json::parse(req.body());
+
+            if (!parsedValue.is_object()) {
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::uuids::uuid uuid = boost::uuids::random_generator()();
+            std::string customer_unique = boost::uuids::to_string(uuid);
+            std::string customer_reg_date = getCurrentDate();
+
+            const boost::json::object& jsonBody = parsedValue.as_object();
+
+            std::string customer_branch = safe_get_value<std::string>(jsonBody, "customer_branch", "Customer Branch");
+            std::string customer_name = safe_get_value<std::string>(jsonBody, "customer_name", "Customer Name");
+            std::string customer_gender = safe_get_value<std::string>(jsonBody, "customer_gender", "Customer Gender");
+            std::string customer_contact = safe_get_value<std::string>(jsonBody, "customer_contact", "Customer Contact");
+            std::string customer_address = safe_get_value<std::string>(jsonBody, "customer_address", "Customer Address");
+            std::string customer_house_number = safe_get_value<std::string>(jsonBody, "customer_house_number", "Customer House Number");
+
+            auto branch_d = BranchController::getBranchByUiid(handle, customer_branch);
+            if(!branch_d){ // this should not happen
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"error": "Failed to get branch customer"})";
+                res.prepare_payload();
+                return;
+            }
+
+            // Create customer object
+            boost::shared_ptr<customer> customer_d = boost::make_shared<customer>(
+                customer_unique, 
+                branch_d,
+                customer_name, 
+                customer_gender, 
+                customer_contact, 
+                customer_address, 
+                customer_house_number, 
+                customer_reg_date
+            );
+
+            if (CustomerController::createCustomer(handle, customer_d)) {
+                res.version(req.version());
+                res.result(beast::http::status::ok);
+                res.body() = R"({"message": "Customer created successfully!"})";
+            } else {                
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"error": "Failed to create customer"})";
+            }
+            res.prepare_payload();
+        }
+    }
+
+    static void put(
+        std::shared_ptr<odb::mysql::database>& handle,
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res
+    ) {
+        if (req.method() == http::verb::put) {
+            std::cout << "http::verb::put Customer called" << std::endl;
+            boost::json::value parsedValue = boost::json::parse(req.body());
+
+            if (!parsedValue.is_object()) {
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+                res.prepare_payload();
+                return;
+            }
+
+            if (CustomerController::updateCustomer(handle, parsedValue)) {
+                res.version(req.version());
+                res.result(beast::http::status::ok);
+                res.body() = R"({"message": "Customer updated successfully!"})";
+            } else {                
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"error": "Failed to update customer"})";
+            }
+            res.prepare_payload();
+        }
+    }
+
+    // Handle DELETE request to remove a customer by UUID
+    static void delete_data(
+        std::shared_ptr<odb::mysql::database>& handle,
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res,
+        const std::unordered_map<std::string, std::string>& query_params
+    ) {
+        if (req.method() == http::verb::delete_) {
+            std::cout << "http::verb::delete Customer called" << std::endl;
+            auto uuid = query_params.find("uuid");
+            if (uuid != query_params.end()) {
+                std::string customer_unique = uuid->second;
+                if (CustomerController::deleteCustomer(handle, customer_unique)) {
+                    res.version(req.version());
+                    res.result(beast::http::status::ok);
+                    res.body() = R"({"message": "Customer deleted successfully!"})";
+                } else {                
+                    res.result(http::status::bad_request);
+                    res.set(http::field::content_type, "application/json");
+                    res.body() = R"({"error": "Failed to delete customer"})";
+                }
+                res.prepare_payload();
+            } else {
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"error": "Bad Request."})";
+                res.prepare_payload();
+            }
+        }
+    }
+    
+    static void searchCustomerMeter(
+        std::shared_ptr<odb::mysql::database>& handle,
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res
+    ){
+        if (req.method() == http::verb::post) {
+            
+            std::cout << "http::verb::searchCustomerMeter Meter called" << std::endl;
+            boost::json::value parsedValue = boost::json::parse(req.body());
+
+            if (!parsedValue.is_object()) {
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            const boost::json::object& jsonBody = parsedValue.as_object();
+            std::string search_query = safe_get_value<std::string>(jsonBody, "search_query", "uuid");
+
+            // Priotize name, phone number and last meter number
+           
+
+            auto customer_v1 = CustomerController::searchCustomerByName(handle, search_query);
+            if(!customer_v1.empty()){
+                auto customers_json =  customers_to_json(customer_v1);
+                response_json["customers_data"] = customers_json;
+                std::string jsonString = boost::json::serialize(response_json);
+                res.set(http::field::content_type, "application/json");
+                res.body() = jsonString;
+                return;
+            }
+
+            auto customer_v2 = CustomerController::searchCustomerByPhone(handle, search_query);
+             if(!customer_v2.empty()){
+                auto customers_json = CustomerHttp::customers_to_json(customer_v2);
+                response_json["customers_data"] = customers_json;
+                std::string jsonString = boost::json::serialize(response_json);
+                res.set(http::field::content_type, "application/json");
+                res.body() = jsonString;
+                return;
+            }
+
+            auto customer_v3 = MeterController::searchMeterByNumber(handle, search_query);
+            if(!customer_v3.empty()){
+                auto customers_json = MeterHttp::meters_to_json(customer_v3, true);
+                response_json["customers_data"] = customers_json;
+                std::string jsonString = boost::json::serialize(response_json);
+                res.set(http::field::content_type, "application/json");
+                res.body() = jsonString;
+                return;
+            }
+            
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"error": "Failed to get customer data"})";
+            res.prepare_payload();
+            return;
+        }
+    }
+};  

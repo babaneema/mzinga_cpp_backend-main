@@ -1,0 +1,42 @@
+sudo odb -d mysql --generate-query --generate-schema address.hxx
+sudo odb --generate-query --generate-schema --std c++14 --boost -d mysql employees.hxx
+
+sudo odb --generate-query --generate-schema --std c++14  -d mysql --hxx-prologue '#include <odb/boost/smart-ptr/pointer-traits.hxx>' employee.hxx
+
+ sudo odb --generate-query --generate-schema --std c++14  -d mysql --hxx-prologue '#include <odb/boost/smart-ptr/pointer-traits.hxx>' customer.hxx
+
+Add the following tables
+1. Address Table. 
+2. Department table - This needs talking to the owner of system 
+
+
+
+Modifies all date to varchar(255) - Dont worry memory is cheap.
+Do add Employee . Not hard actually 
+
+sudo  docker build -t myproject .
+
+sudo docker run -p 8080:8080 myproject
+
+sudo docker run -d \
+  --name loving_neumann \
+  -p 8080:4500 \
+  -e DB_HOST=host.docker.internal \
+  -e DB_PORT=3306 \
+  -e DB_NAME=mzinga \
+  -e DB_USER=mzingamaji \
+  -e DB_PASSWORD=mzinga_system \
+  myproject
+
+
+  address: "Mbagala"
+​​
+branch: 1
+​​
+contact: "0743386617"
+​​
+fullName: "Mwanaisha Abdallah"
+​​
+gender: "Male"
+​​
+password: '2?Be?U]>!Km"cxZ'
