@@ -78,3 +78,16 @@ bool verifyPassword(const std::string& password, const std::string& hash) {
         return false;
     }
 }
+
+
+std::string formatedValue(double value) {
+    std::ostringstream stream;
+    stream << std::fixed << std::setprecision(2) << value;
+    return stream.str();
+}
+
+std::string formatedValue(float value) {
+    std::ostringstream stream;
+    stream << std::fixed << std::setprecision(2) << value;
+    return stream.str();
+}

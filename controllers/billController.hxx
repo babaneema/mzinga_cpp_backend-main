@@ -145,9 +145,7 @@ public:
 
         try {
             odb::transaction t(db->begin());
-            // odb::result<bill> r(db->query<bill>());
             odb::result<bill> r(db->query<bill>(query::bill_meter == meter_id));
-
 
             for (auto i = r.begin(); i != r.end(); ++i) {
                 try {
@@ -164,6 +162,31 @@ public:
         }
 
         return total_units_used;
+    }
+
+
+    static double sumBillCostUsed(const std::shared_ptr<odb::mysql::database> & db, const int & meter_id) {
+        double total_bill_cost = 0.0;
+
+        try {
+            odb::transaction t(db->begin());
+            odb::result<bill> r(db->query<bill>(query::bill_meter == meter_id));
+
+            for (auto i = r.begin(); i != r.end(); ++i) {
+                try {
+                    // Convert bill_cost to double and add to total
+                    total_bill_cost += std::stod(i->get_bill_cost());
+                } catch (const std::invalid_argument& e) {
+                    std::cerr << "Invalid bill_cost format for bill ID " << i->get_bill_id() << ": " << e.what() << std::endl;
+                }
+            }
+
+            t.commit();
+        } catch (const std::exception& e) {
+            std::cerr << "Error summing bill units used: " << e.what() << std::endl;
+        }
+
+        return total_bill_cost;
     }
 
 };

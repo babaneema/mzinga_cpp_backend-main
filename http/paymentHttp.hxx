@@ -3,10 +3,12 @@
 #include "core/server.hxx"
 #include <boost/json.hpp>
 #include <boost/shared_ptr.hpp>
+#include "core/sms.hxx"
 
 #include "controllers/paymentController.hxx"
 #include "controllers/customerController.hxx"
 #include "controllers/billController.hxx"
+#include "controllers/unitController.hxx"
 
 class PaymentHttp {
 public:
@@ -98,7 +100,6 @@ public:
             auto customer_d = CustomerController::getCustomerByUiid(handle, pay_customer);
             
             if(!customer_d){ // this should not happen
-                std::cout << "Here 21" << endl;
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
                 res.body() = R"({"error": "Failed to get customer data"})";
@@ -109,7 +110,7 @@ public:
             auto bill_d = BillController::getBillByUiid(handle, pay_bill);
             
             if(!bill_d){ // this should not happen
-                 std::cout << "Here 3" << endl;
+                std::cout << "Here 3" << endl;
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
                 res.body() = R"({"error": "Failed to get bills data"})";
@@ -119,22 +120,35 @@ public:
 
 
             boost::shared_ptr<payments> payments_d = boost::make_shared<payments>(
-                                                    pay_unique, 
-                                                    bill_d, 
-                                                    customer_d,
-                                                    pay_method,
-                                                    pay_type,
-                                                    pay_amount,
-                                                    pay_reg_date
-                                                );
+                pay_unique, 
+                bill_d, 
+                customer_d,
+                pay_method,
+                pay_type,
+                pay_amount,
+                pay_reg_date
+            );
 
             if (PaymentController::createPayment(handle, payments_d)) {
-                std::cout << "We are hear 1" << endl;
+
+                auto meter_id = bill_d->get_bill_meter()->get_meter_id();
+                auto total_units_used = BillController::sumBillUnitsUsed(handle, meter_id);
+                auto total_bill_cost = BillController::sumBillCostUsed(handle, meter_id);
+
+                auto total_customer_payment  = PaymentController::sumPayAmount(handle, customer_d->get_customer_id());
+
+                auto total_debt = total_bill_cost - total_customer_payment;
+
+                std::string massage = "Habari, Umefanya malipo ya shiling : " +pay_amount+
+                                      " Deni ni : "+formatedValue(total_debt);
+
+                std::string phone_number = customer_d->get_customer_contact();
+                sendSingleSms(phone_number, massage);
+
                 res.version(req.version());
                 res.result(beast::http::status::ok);
                 res.body() = R"({"message": "Payment accepted successfully!"})";
-            }else{  
-                std::cout << "We are hear 2" << endl;              
+            }else{              
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
                 res.body() = R"({"error": "Failed to do payment"})";

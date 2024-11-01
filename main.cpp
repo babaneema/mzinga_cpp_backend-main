@@ -30,6 +30,8 @@ int main(int argc, char* argv[]) {
     server::add_allowed_origin("https://mzingamaji.co.tz"); 
 
     // sendSingleSms("255763096136", "Hello. Sunday Jabil");
+    // $massage = 'MZINGA MAJi GOUP, Umefanya malipo ya shiling : '.$amount.' Deni ni '.$total_depts - $amount.' Asante';
+    // $massage = 'MZINGA MAJI, Umetumia Units :  '.$new_unit.' Kutoka : '.$sum_unit_used.'. Hadi : '.$reading.' Deni lako la nyuma ni Tsh : '.$past_dept.' Jumla ya deni lako ni Tsh :'.$total_b;
 
     register_route("/api/v1/branch", [&handle](const http::request<http::string_body>& req, 
                                                         http::response<http::string_body>& res, 

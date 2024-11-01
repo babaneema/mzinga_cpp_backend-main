@@ -4,6 +4,7 @@
 #include <boost/json.hpp>
 #include "controllers/billController.hxx"
 #include "controllers/unitController.hxx"
+#include "controllers/paymentController.hxx"
 #include "http/meterHttp.hxx"
 #include "core/safe_json.hxx"
 #include "core/sms.hxx"
@@ -140,14 +141,20 @@ public:
             }
             // get last leading 
             auto total_units_used = BillController::sumBillUnitsUsed(handle, meter_d->get_meter_id());
-            
+            auto total_bill_cost = BillController::sumBillCostUsed(handle, meter_d->get_meter_id());
+            auto total_customer_payment  = PaymentController::sumPayAmount(handle, 
+                                meter_d->get_meter_customer()->get_customer_id());
+
+            auto total_debt = total_bill_cost - total_customer_payment;
+ 
+
             // now let get unit pointer
             auto branch_d = meter_d->get_meter_customer()->get_customer_branch();
             auto unit_d = UnitController::getLastUnitByBranch(handle, branch_d);
 
             // from last reading get the current on.
             auto unit_u = std::stoi(meter_read) - total_units_used;
-            // std::cout << "TT : " << unit_u << endl;
+
             if(0 > unit_u){
                 std::cout << "called here 3 " <<endl;
                 res.result(http::status::bad_request);
@@ -158,13 +165,10 @@ public:
             }
 
             auto cost_ = unit_u * std::stoi(unit_d->get_unit_price());
-            std::ostringstream cost_stream;
-            cost_stream << std::fixed << std::setprecision(2) << cost_;
-            std::string formatted_cost = cost_stream.str();
-
-            std::ostringstream cost_stream_1;
-            cost_stream_1 << std::fixed << std::setprecision(2) << unit_u;
-            std::string formatted_unit_u = cost_stream_1.str();
+            auto new_dept = total_debt + cost_;
+            
+            std::string formatted_cost = formatedValue(cost_);
+            std::string formatted_unit_u = formatedValue(unit_u);
 
             boost::shared_ptr<bill> bill_d = boost::make_shared<bill>(
                 bill_unique,
@@ -177,7 +181,17 @@ public:
             );
 
             if (BillController::createBill(handle, bill_d)) {
-                // send message here
+                // send message here 
+
+                std::string massage = "Habari, Umetumia Units :  " +formatted_unit_u+
+                                    " Kutoka  " +formatedValue(total_units_used)+
+                                    " Hadi " +meter_read+ 
+                                    " Deni lako la nyuma ni Tsh  " +formatedValue(total_debt)+
+                                    " Jumla ya deni lako ni Tsh : " +formatedValue(new_dept);
+
+                std::string phone_number = meter_d->get_meter_customer()->get_customer_contact();
+                
+                sendSingleSms(phone_number, massage);
                 std::string sms = "";
                 res.result(http::status::ok);
                 res.body() = R"({"message": "Bill created successfully!"})";
