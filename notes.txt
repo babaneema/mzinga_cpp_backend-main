@@ -3,12 +3,18 @@ sudo odb --generate-query --generate-schema --std c++14 --boost -d mysql employe
 
 sudo odb --generate-query --generate-schema --std c++14  -d mysql --hxx-prologue '#include <odb/boost/smart-ptr/pointer-traits.hxx>' employee.hxx
 
- sudo odb --generate-query --generate-schema --std c++14  -d mysql --hxx-prologue '#include <odb/boost/smart-ptr/pointer-traits.hxx>' customer.hxx
+sudo odb --generate-query --generate-schema --std c++14  -d mysql --hxx-prologue '#include <odb/boost/smart-ptr/pointer-traits.hxx>' customer.hxx
 
 Add the following tables
 1. Address Table. 
 2. Department table - This needs talking to the owner of system 
 
+creating database and user*
+CREATE DATABASE IF NOT EXISTS sql_mzingamaji_c;
+CREATE USER 'sql_mzingamaji_c'@'%' IDENTIFIED BY 'NEs578aPybpeTe6P';
+GRANT ALL PRIVILEGES ON sql_mzingamaji_c.* TO 'sql_mzingamaji_c'@'%';
+FLUSH PRIVILEGES;
+EXIT;
 
 
 Modifies all date to varchar(255) - Dont worry memory is cheap.
@@ -29,14 +35,3 @@ sudo docker run -d \
   myproject
 
 
-  address: "Mbagala"
-​​
-branch: 1
-​​
-contact: "0743386617"
-​​
-fullName: "Mwanaisha Abdallah"
-​​
-gender: "Male"
-​​
-password: '2?Be?U]>!Km"cxZ'

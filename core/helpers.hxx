@@ -9,18 +9,24 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/functional/hash.hpp>
-#include <sstream>
 #include <iomanip>
+#include <iostream>
+#include <fstream>
+#include <ctime>
 
+void logger(const std::string& functionName, const std::string& action);
 
 
 std::string getCurrentDate() {
-    auto now = std::chrono::system_clock::now();
+    // Get the current time and add a 3-hour offset for Tanzania (UTC+3)
+    auto now = std::chrono::system_clock::now() + std::chrono::hours(3);
     std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+
     std::ostringstream dateStream;
     dateStream << std::put_time(std::localtime(&now_c), "%Y-%m-%d");
     return dateStream.str();
 }
+
 
 // Hashing with Boost's SHA-256
 std::string hashPassword(const std::string& password) {
@@ -30,20 +36,16 @@ std::string hashPassword(const std::string& password) {
         boost::uuids::uuid salt = gen();
         std::string salt_str = boost::uuids::to_string(salt);
 
-        // Combine password with salt
         std::string salted_password = password + salt_str;
-
-        // Hash the salted password using Boost.Hash
         boost::hash<std::string> string_hash;
         std::size_t hash_value = string_hash(salted_password);
 
-        // Convert the hash to a hex string
         std::stringstream hash_stream;
         hash_stream << std::hex << hash_value;
 
-        // Store the salt with the hash (you can separate them for better storage)
         return salt_str + ":" + hash_stream.str();
     } catch (const std::exception& e) {
+        logger("hashPassword", e.what());
         std::cerr << "Error hashing password: " << e.what() << std::endl;
         return "";
     }
@@ -74,6 +76,7 @@ bool verifyPassword(const std::string& password, const std::string& hash) {
 
         return hash_stream.str() == stored_hash;
     } catch (const std::exception& e) {
+        logger("verifyPassword", e.what());
         std::cerr << "Error verifying password: " << e.what() << std::endl;
         return false;
     }
@@ -90,4 +93,30 @@ std::string formatedValue(float value) {
     std::ostringstream stream;
     stream << std::fixed << std::setprecision(2) << value;
     return stream.str();
+}
+
+void logger(const std::string& functionName, const std::string& action) {
+    // Open file in append mode
+    std::ofstream logFile("system_logs.txt", std::ios::app);
+    
+    // Check if the file opened successfully
+    if (!logFile.is_open()) {
+        std::cerr << "Unable to open log file!" << std::endl;
+        return;
+    }
+
+    // Get the current time in Tanzania time (EAT, UTC+3)
+    std::time_t now = std::time(nullptr);
+    now += 3 * 60 * 60;  // Add 3 hours for UTC+3
+
+    // Format the time
+    std::tm* localTime = std::gmtime(&now);  // Get in UTC then add offset for accuracy
+    std::ostringstream oss;
+    oss << std::put_time(localTime, "%Y-%m-%d %H:%M:%S");
+
+    // Write the log entry
+    logFile << "[" << oss.str() << "] " << "Function: " << functionName 
+            << ", Action: " << action << std::endl;
+
+    logFile.close();
 }

@@ -10,7 +10,8 @@
 #include <iomanip>
 
 #include "controllers/employeeController.hxx"
-#include "controllers/branchController.hxx"
+#include "controllers/usersController.hxx"
+#include "controllers/usersController.hxx"
 #include "core/safe_json.hxx"
 #include "core/helpers.hxx"
 
@@ -45,12 +46,13 @@ public:
 
     // HTTP GET request handler for fetching employees
     static void get(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::get) {
-            std::cout << "http::verb::get called" << std::endl;
+            logger("EmployeeHttp::get", "Called");
+            auto handle = database::get_connection_by_company("mzingamaji");
+            
 
             // Fetch all employees from the controller
             auto employees = EmployeeController::getAllEmployees(handle);
@@ -65,14 +67,14 @@ public:
     }
 
     static void post(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     )
     {
         if(req.method() == http::verb::post){
-            std::cout << "http::verb::post Employee called" <<endl;
+            logger("EmployeeHttp::post", "Called");
             boost::json::value parsedValue = boost::json::parse(req.body());
+            auto handle = database::get_connection_by_company("mzingamaji");
 
             if (!parsedValue.is_object()) {
                 res.result(http::status::bad_request);
@@ -92,7 +94,8 @@ public:
             std::string gender      = safe_get_value<std::string>(jsonBody, "employee_gender", "Employee Gender");
             std::string contact     = safe_get_value<std::string>(jsonBody, "employee_contact", "Employee Contact"); 
             std::string address     = safe_get_value<std::string>(jsonBody, "employee_address", "Employee Address"); 
-            std::string password    = safe_get_value<std::string>(jsonBody, "employee_password", "1234567"); 
+            std::string admin       = safe_get_value<std::string>(jsonBody, "employee_administrative", "employee_administrative"); 
+            std::string password    = safe_get_value<std::string>(jsonBody, "employee_password", "employee_password"); 
             std::string branch_     = safe_get_value<std::string>(jsonBody, "employee_branch", "uuid");
            
             
@@ -104,9 +107,6 @@ public:
                 res.prepare_payload();
                 return;
             }
-
-            std::string hash_password = hashPassword(password);
-
             boost::shared_ptr<employee> employee_d = boost::make_shared<employee>(
                 employee_unique,
                 branch_d,
@@ -114,11 +114,23 @@ public:
                 gender,
                 contact,
                 address,
-                hash_password,
+                admin,
                 employee_reg_date
             );
 
             if (EmployeeController::createEmployee(handle, employee_d)) {
+                // create user record. 
+                std::string company = "mzingamaji";
+                std::string password_hash = hashPassword(password);
+                boost::shared_ptr<users> user_d = boost::make_shared<users>(
+                    company,
+                    contact,
+                    password_hash,
+                    employee_reg_date
+                );
+                auto admin_handle = database::get_connection_by_company("admin");
+                UserController::createUser(admin_handle,user_d);
+
                 res.version(req.version());
                 res.result(beast::http::status::ok);
                 res.body() = R"({"message": "Employee created successfully!"})";
@@ -132,73 +144,6 @@ public:
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
             res.body() = R"({"error": "Bad Request."})";
-            res.prepare_payload();
-            return;
-        }
-    }
-    // login employee
-    static void login(
-        std::shared_ptr<odb::mysql::database>& handle,
-        const http::request<http::string_body>& req,
-        http::response<http::string_body>& res
-    )
-    {
-        if(req.method() == http::verb::post){
-            std::cout << "http::verb::login Employee called" <<endl;
-            boost::json::value parsedValue = boost::json::parse(req.body());
-
-            if (!parsedValue.is_object()) {
-                res.result(http::status::bad_request);
-                res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
-                res.prepare_payload();
-                return;
-            }
-
-            const boost::json::object& jsonBody = parsedValue.as_object();
-
-            std::string contact     = safe_get_value<std::string>(jsonBody, "employee_contact", "Employee Contact"); 
-            std::string password    = safe_get_value<std::string>(jsonBody, "employee_password", "1234567"); 
-           
-            auto atempt_employee =  EmployeeController::getEmployeeByContact(handle, contact);
-
-            if (atempt_employee) {
-                // now check passord
-                std::string password_harsh = atempt_employee->get_employee_password();
-                if(!verifyPassword(password, password_harsh)){
-                    res.result(http::status::bad_request);
-                    res.set(http::field::content_type, "application/json");
-                    res.body() = R"({"error": "Authentication failed."})";
-                    res.prepare_payload();
-                    return;
-                }
-                
-                // here create a midware session 
-                // SessionMiddleware::set_session(atempt_employee->get_employee_id(), res);
-
-                auto employee_json =  employee_to_json(atempt_employee);
-                std::string jsonString = boost::json::serialize(employee_json);
-
-                res.version(req.version());
-                res.result(beast::http::status::ok);
-                res.set(http::field::content_type, "application/json");
-                res.body() = jsonString;
-                res.prepare_payload();
-                return;
-                
-            }
-            else{                
-                res.result(http::status::bad_request);
-                res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Failed to create branch"})";
-                res.prepare_payload();
-                return;
-            }
-            
-        }else{
-            res.result(http::status::bad_request);
-            res.set(http::field::content_type, "application/json");
-            res.body() = R"({"error": "Authentication failed."})";
             res.prepare_payload();
             return;
         }

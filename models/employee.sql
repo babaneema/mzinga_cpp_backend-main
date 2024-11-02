@@ -12,7 +12,7 @@ CREATE TABLE `employee` (
   `employee_gender` TEXT NOT NULL,
   `employee_contact` TEXT NOT NULL,
   `employee_address` TEXT NOT NULL,
-  `employee_password` TEXT NOT NULL,
+  `employee_administrative` TEXT NOT NULL,
   `employee_reg_date` TEXT NOT NULL)
  ENGINE=InnoDB;
 

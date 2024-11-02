@@ -188,7 +188,7 @@ namespace odb
 
     static const employee_address_type_ employee_address;
 
-    // employee_password
+    // employee_administrative
     //
     typedef
     mysql::query_column<
@@ -196,9 +196,9 @@ namespace odb
         ::std::string,
         mysql::id_string >::query_type,
       mysql::id_string >
-    employee_password_type_;
+    employee_administrative_type_;
 
-    static const employee_password_type_ employee_password;
+    static const employee_administrative_type_ employee_administrative;
 
     // employee_reg_date
     //
@@ -249,9 +249,9 @@ namespace odb
   employee_address (A::table_name, "`employee_address`", 0);
 
   template <typename A>
-  const typename pointer_query_columns< ::employee, id_mysql, A >::employee_password_type_
+  const typename pointer_query_columns< ::employee, id_mysql, A >::employee_administrative_type_
   pointer_query_columns< ::employee, id_mysql, A >::
-  employee_password (A::table_name, "`employee_password`", 0);
+  employee_administrative (A::table_name, "`employee_administrative`", 0);
 
   template <typename A>
   const typename pointer_query_columns< ::employee, id_mysql, A >::employee_reg_date_type_
@@ -313,11 +313,11 @@ namespace odb
       unsigned long employee_address_size;
       my_bool employee_address_null;
 
-      // employee_password
+      // employee_administrative
       //
-      details::buffer employee_password_value;
-      unsigned long employee_password_size;
-      my_bool employee_password_null;
+      details::buffer employee_administrative_value;
+      unsigned long employee_administrative_size;
+      my_bool employee_administrative_null;
 
       // employee_reg_date
       //
@@ -561,7 +561,7 @@ namespace odb
 
     static const employee_address_type_ employee_address;
 
-    // employee_password
+    // employee_administrative
     //
     typedef
     mysql::query_column<
@@ -569,9 +569,9 @@ namespace odb
         ::std::string,
         mysql::id_string >::query_type,
       mysql::id_string >
-    employee_password_type_;
+    employee_administrative_type_;
 
-    static const employee_password_type_ employee_password;
+    static const employee_administrative_type_ employee_administrative;
 
     // employee_reg_date
     //
@@ -622,9 +622,9 @@ namespace odb
   employee_address (A::table_name, "`employee_address`", 0);
 
   template <typename A>
-  const typename query_columns< ::employee, id_mysql, A >::employee_password_type_
+  const typename query_columns< ::employee, id_mysql, A >::employee_administrative_type_
   query_columns< ::employee, id_mysql, A >::
-  employee_password (A::table_name, "`employee_password`", 0);
+  employee_administrative (A::table_name, "`employee_administrative`", 0);
 
   template <typename A>
   const typename query_columns< ::employee, id_mysql, A >::employee_reg_date_type_

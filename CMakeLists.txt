@@ -8,7 +8,7 @@ set(ODB_FLAGS --std c++14)
 
 
 # add_subdirectory(jwt-cpp-master)
-# include_directories(${CMAKE_SOURCE_DIR}/jwt-cpp-master/include)
+# include_directories(${CMAKE_SOURCE_DIR}/jwt-cpp-master/include) 
 
 set(SOURCES
     main.cpp
@@ -26,6 +26,8 @@ set(SOURCES
     models/unit-odb.cxx
     models/meter-odb.cxx
     models/payment-odb.cxx
+    models/companies-odb.cxx 
+    models/users-odb.cxx
 
 )
 
@@ -51,6 +53,10 @@ set(HEADERS
     models/meter-odb.hxx
     models/payment.hxx
     models/payment-odb.hxx
+    models/companies.hxx
+    models/companies-odb.hxx 
+    models/users.hxx
+    models/users-odb.hxx 
     
     core/database.hxx
     core/server.hxx
@@ -68,6 +74,8 @@ set(HEADERS
     controller/unitController.hxx
     controller/meterController.hxx
     controller/paymentController.hxx
+    controller/companiesController.hxx
+    controller/usersController.hxx
 
     middleware/jsonparser.hxx
     middleware/session_guard.hxx

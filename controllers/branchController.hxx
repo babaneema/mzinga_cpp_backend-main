@@ -16,6 +16,7 @@
 #include <boost/json.hpp>
 #include <boost/shared_ptr.hpp>
 #include "core/safe_json.hxx"
+#include "core/helpers.hxx"
 
 class BranchController {
 public:
@@ -34,6 +35,7 @@ public:
             return branches;
 
         } catch (const std::exception& e) {
+            logger("BranchController::getAllBranches", e.what());
             std::cerr << "Error fetching branches: " << e.what() << std::endl;
             return branches;
         }
@@ -46,7 +48,8 @@ public:
             db->load(id,*branch_data);
             t.commit();
             return branch_data;
-        } catch (const std::exception& e) {
+        } catch (const std::exception& e) { 
+            logger("BranchController::getBranchById", e.what());
             std::cerr << "Error fetching branch by UUID: " << e.what() << std::endl;
             return nullptr; 
         }
@@ -59,6 +62,7 @@ public:
             t.commit();
             return true;
         }catch (const std::exception& e) {
+            logger("BranchController::createBranch", e.what());
             std::cerr << "Error : " << e.what() << std::endl;
             return false;
         }
@@ -73,6 +77,7 @@ public:
             return branch_data;
 
         }catch (const std::exception& e) {
+            logger("BranchController::getBranchByUiid", e.what());
             std::cerr << "Error here: " << e.what() << std::endl;
             return nullptr;
         }
@@ -99,6 +104,7 @@ public:
             return true;
 
         }catch (const std::exception& e) {
+            logger("BranchController::updateBranch", e.what());
             std::cerr << "Error here: " << e.what() << std::endl;
             return false;
         }
@@ -118,6 +124,7 @@ public:
             return true;
 
         }catch (const std::exception& e) {
+            logger("BranchController::deleteBranch", e.what());
             std::cerr << "Error here: " << e.what() << std::endl;
             return false;
         }

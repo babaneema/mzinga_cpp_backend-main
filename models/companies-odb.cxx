@@ -4,7 +4,7 @@
 
 #include <odb/pre.hxx>
 
-#include "employee-odb.hxx"
+#include "companies-odb.hxx"
 
 #include <cassert>
 #include <cstring>  // std::memcpy
@@ -24,15 +24,10 @@
 
 namespace odb
 {
-  // employee
+  // companies
   //
 
-  const char alias_traits<  ::branch,
-    id_mysql,
-    access::object_traits_impl< ::employee, id_mysql >::employee_branch_tag>::
-  table_name[] = "`employee_branch`";
-
-  struct access::object_traits_impl< ::employee, id_mysql >::extra_statement_cache_type
+  struct access::object_traits_impl< ::companies, id_mysql >::extra_statement_cache_type
   {
     extra_statement_cache_type (
       mysql::connection&,
@@ -44,8 +39,8 @@ namespace odb
     }
   };
 
-  access::object_traits_impl< ::employee, id_mysql >::id_type
-  access::object_traits_impl< ::employee, id_mysql >::
+  access::object_traits_impl< ::companies, id_mysql >::id_type
+  access::object_traits_impl< ::companies, id_mysql >::
   id (const id_image_type& i)
   {
     mysql::database* db (0);
@@ -64,8 +59,8 @@ namespace odb
     return id;
   }
 
-  access::object_traits_impl< ::employee, id_mysql >::id_type
-  access::object_traits_impl< ::employee, id_mysql >::
+  access::object_traits_impl< ::companies, id_mysql >::id_type
+  access::object_traits_impl< ::companies, id_mysql >::
   id (const image_type& i)
   {
     mysql::database* db (0);
@@ -77,14 +72,14 @@ namespace odb
           long unsigned int,
           mysql::id_ulonglong >::set_value (
         id,
-        i.employee_id_value,
-        i.employee_id_null);
+        i.company_id_value,
+        i.company_id_null);
     }
 
     return id;
   }
 
-  bool access::object_traits_impl< ::employee, id_mysql >::
+  bool access::object_traits_impl< ::companies, id_mysql >::
   grow (image_type& i,
         my_bool* t)
   {
@@ -93,74 +88,46 @@ namespace odb
 
     bool grew (false);
 
-    // employee_id
+    // company_id
     //
     t[0UL] = 0;
 
-    // employee_branch
+    // company
     //
-    t[1UL] = 0;
+    if (t[1UL])
+    {
+      i.company_value.capacity (i.company_size);
+      grew = true;
+    }
 
-    // employee_unique
+    // database_username
     //
     if (t[2UL])
     {
-      i.employee_unique_value.capacity (i.employee_unique_size);
+      i.database_username_value.capacity (i.database_username_size);
       grew = true;
     }
 
-    // employee_name
+    // database_password
     //
     if (t[3UL])
     {
-      i.employee_name_value.capacity (i.employee_name_size);
+      i.database_password_value.capacity (i.database_password_size);
       grew = true;
     }
 
-    // employee_gender
+    // database_name
     //
     if (t[4UL])
     {
-      i.employee_gender_value.capacity (i.employee_gender_size);
-      grew = true;
-    }
-
-    // employee_contact
-    //
-    if (t[5UL])
-    {
-      i.employee_contact_value.capacity (i.employee_contact_size);
-      grew = true;
-    }
-
-    // employee_address
-    //
-    if (t[6UL])
-    {
-      i.employee_address_value.capacity (i.employee_address_size);
-      grew = true;
-    }
-
-    // employee_administrative
-    //
-    if (t[7UL])
-    {
-      i.employee_administrative_value.capacity (i.employee_administrative_size);
-      grew = true;
-    }
-
-    // employee_reg_date
-    //
-    if (t[8UL])
-    {
-      i.employee_reg_date_value.capacity (i.employee_reg_date_size);
+      i.database_name_value.capacity (i.database_name_size);
       grew = true;
     }
 
     return grew;
   }
 
-  void access::object_traits_impl< ::employee, id_mysql >::
+  void access::object_traits_impl< ::companies, id_mysql >::
   bind (MYSQL_BIND* b,
         image_type& i,
         mysql::statement_kind sk)
@@ -171,97 +138,59 @@ namespace odb
 
     std::size_t n (0);
 
-    // employee_id
+    // company_id
     //
     if (sk != statement_update)
     {
       b[n].buffer_type = MYSQL_TYPE_LONGLONG;
       b[n].is_unsigned = 1;
-      b[n].buffer = &i.employee_id_value;
-      b[n].is_null = &i.employee_id_null;
+      b[n].buffer = &i.company_id_value;
+      b[n].is_null = &i.company_id_null;
       n++;
     }
 
-    // employee_branch
-    //
-    b[n].buffer_type = MYSQL_TYPE_LONGLONG;
-    b[n].is_unsigned = 1;
-    b[n].buffer = &i.employee_branch_value;
-    b[n].is_null = &i.employee_branch_null;
-    n++;
-
-    // employee_unique
+    // company
     //
     b[n].buffer_type = MYSQL_TYPE_STRING;
-    b[n].buffer = i.employee_unique_value.data ();
+    b[n].buffer = i.company_value.data ();
     b[n].buffer_length = static_cast<unsigned long> (
-      i.employee_unique_value.capacity ());
-    b[n].length = &i.employee_unique_size;
-    b[n].is_null = &i.employee_unique_null;
+      i.company_value.capacity ());
+    b[n].length = &i.company_size;
+    b[n].is_null = &i.company_null;
     n++;
 
-    // employee_name
+    // database_username
     //
     b[n].buffer_type = MYSQL_TYPE_STRING;
-    b[n].buffer = i.employee_name_value.data ();
+    b[n].buffer = i.database_username_value.data ();
     b[n].buffer_length = static_cast<unsigned long> (
-      i.employee_name_value.capacity ());
-    b[n].length = &i.employee_name_size;
-    b[n].is_null = &i.employee_name_null;
+      i.database_username_value.capacity ());
+    b[n].length = &i.database_username_size;
+    b[n].is_null = &i.database_username_null;
     n++;
 
-    // employee_gender
+    // database_password
     //
     b[n].buffer_type = MYSQL_TYPE_STRING;
-    b[n].buffer = i.employee_gender_value.data ();
+    b[n].buffer = i.database_password_value.data ();
     b[n].buffer_length = static_cast<unsigned long> (
-      i.employee_gender_value.capacity ());
-    b[n].length = &i.employee_gender_size;
-    b[n].is_null = &i.employee_gender_null;
+      i.database_password_value.capacity ());
+    b[n].length = &i.database_password_size;
+    b[n].is_null = &i.database_password_null;
     n++;
 
-    // employee_contact
+    // database_name
     //
     b[n].buffer_type = MYSQL_TYPE_STRING;
-    b[n].buffer = i.employee_contact_value.data ();
+    b[n].buffer = i.database_name_value.data ();
     b[n].buffer_length = static_cast<unsigned long> (
-      i.employee_contact_value.capacity ());
-    b[n].length = &i.employee_contact_size;
-    b[n].is_null = &i.employee_contact_null;
-    n++;
-
-    // employee_address
-    //
-    b[n].buffer_type = MYSQL_TYPE_STRING;
-    b[n].buffer = i.employee_address_value.data ();
-    b[n].buffer_length = static_cast<unsigned long> (
-      i.employee_address_value.capacity ());
-    b[n].length = &i.employee_address_size;
-    b[n].is_null = &i.employee_address_null;
-    n++;
-
-    // employee_administrative
-    //
-    b[n].buffer_type = MYSQL_TYPE_STRING;
-    b[n].buffer = i.employee_administrative_value.data ();
-    b[n].buffer_length = static_cast<unsigned long> (
-      i.employee_administrative_value.capacity ());
-    b[n].length = &i.employee_administrative_size;
-    b[n].is_null = &i.employee_administrative_null;
-    n++;
-
-    // employee_reg_date
-    //
-    b[n].buffer_type = MYSQL_TYPE_STRING;
-    b[n].buffer = i.employee_reg_date_value.data ();
-    b[n].buffer_length = static_cast<unsigned long> (
-      i.employee_reg_date_value.capacity ());
-    b[n].length = &i.employee_reg_date_size;
-    b[n].is_null = &i.employee_reg_date_null;
+      i.database_name_value.capacity ());
+    b[n].length = &i.database_name_size;
+    b[n].is_null = &i.database_name_null;
     n++;
   }
 
-  void access::object_traits_impl< ::employee, id_mysql >::
+  void access::object_traits_impl< ::companies, id_mysql >::
   bind (MYSQL_BIND* b, id_image_type& i)
   {
     std::size_t n (0);
@@ -271,7 +200,7 @@ namespace odb
     b[n].is_null = &i.id_null;
   }
 
-  bool access::object_traits_impl< ::employee, id_mysql >::
+  bool access::object_traits_impl< ::companies, id_mysql >::
   init (image_type& i,
         const object_type& o,
         mysql::statement_kind sk)
@@ -284,197 +213,109 @@ namespace odb
 
     bool grew (false);
 
-    // employee_id
+    // company_id
     //
     if (sk == statement_insert)
     {
       long unsigned int const& v =
-        o.employee_id;
+        o.company_id;
 
       bool is_null (false);
       mysql::value_traits<
           long unsigned int,
           mysql::id_ulonglong >::set_image (
-        i.employee_id_value, is_null, v);
-      i.employee_id_null = is_null;
+        i.company_id_value, is_null, v);
+      i.company_id_null = is_null;
     }
 
-    // employee_branch
-    //
-    {
-      ::boost::shared_ptr< ::branch > const& v =
-        o.employee_branch;
-
-      typedef object_traits< ::branch > obj_traits;
-      typedef odb::pointer_traits< ::boost::shared_ptr< ::branch > > ptr_traits;
-
-      bool is_null (ptr_traits::null_ptr (v));
-      if (!is_null)
-      {
-        const obj_traits::id_type& id (
-          obj_traits::id (ptr_traits::get_ref (v)));
-
-        mysql::value_traits<
-            obj_traits::id_type,
-            mysql::id_ulonglong >::set_image (
-          i.employee_branch_value, is_null, id);
-        i.employee_branch_null = is_null;
-      }
-      else
-        i.employee_branch_null = 1;
-    }
-
-    // employee_unique
+    // company
     //
     {
       ::std::string const& v =
-        o.employee_unique;
+        o.company;
 
       bool is_null (false);
       std::size_t size (0);
-      std::size_t cap (i.employee_unique_value.capacity ());
+      std::size_t cap (i.company_value.capacity ());
       mysql::value_traits<
           ::std::string,
           mysql::id_string >::set_image (
-        i.employee_unique_value,
+        i.company_value,
         size,
         is_null,
         v);
-      i.employee_unique_null = is_null;
-      i.employee_unique_size = static_cast<unsigned long> (size);
-      grew = grew || (cap != i.employee_unique_value.capacity ());
+      i.company_null = is_null;
+      i.company_size = static_cast<unsigned long> (size);
+      grew = grew || (cap != i.company_value.capacity ());
     }
 
-    // employee_name
+    // database_username
     //
     {
       ::std::string const& v =
-        o.employee_name;
+        o.database_username;
 
       bool is_null (false);
       std::size_t size (0);
-      std::size_t cap (i.employee_name_value.capacity ());
+      std::size_t cap (i.database_username_value.capacity ());
       mysql::value_traits<
           ::std::string,
           mysql::id_string >::set_image (
-        i.employee_name_value,
+        i.database_username_value,
         size,
         is_null,
         v);
-      i.employee_name_null = is_null;
-      i.employee_name_size = static_cast<unsigned long> (size);
-      grew = grew || (cap != i.employee_name_value.capacity ());
+      i.database_username_null = is_null;
+      i.database_username_size = static_cast<unsigned long> (size);
+      grew = grew || (cap != i.database_username_value.capacity ());
     }
 
-    // employee_gender
+    // database_password
     //
     {
       ::std::string const& v =
-        o.employee_gender;
+        o.database_password;
 
       bool is_null (false);
       std::size_t size (0);
-      std::size_t cap (i.employee_gender_value.capacity ());
+      std::size_t cap (i.database_password_value.capacity ());
       mysql::value_traits<
           ::std::string,
           mysql::id_string >::set_image (
-        i.employee_gender_value,
+        i.database_password_value,
         size,
         is_null,
         v);
-      i.employee_gender_null = is_null;
-      i.employee_gender_size = static_cast<unsigned long> (size);
-      grew = grew || (cap != i.employee_gender_value.capacity ());
+      i.database_password_null = is_null;
+      i.database_password_size = static_cast<unsigned long> (size);
+      grew = grew || (cap != i.database_password_value.capacity ());
     }
 
-    // employee_contact
+    // database_name
     //
     {
       ::std::string const& v =
-        o.employee_contact;
+        o.database_name;
 
       bool is_null (false);
       std::size_t size (0);
-      std::size_t cap (i.employee_contact_value.capacity ());
+      std::size_t cap (i.database_name_value.capacity ());
       mysql::value_traits<
           ::std::string,
           mysql::id_string >::set_image (
-        i.employee_contact_value,
+        i.database_name_value,
         size,
         is_null,
         v);
-      i.employee_contact_null = is_null;
-      i.employee_contact_size = static_cast<unsigned long> (size);
-      grew = grew || (cap != i.employee_contact_value.capacity ());
-    }
-
-    // employee_address
-    //
-    {
-      ::std::string const& v =
-        o.employee_address;
-
-      bool is_null (false);
-      std::size_t size (0);
-      std::size_t cap (i.employee_address_value.capacity ());
-      mysql::value_traits<
-          ::std::string,
-          mysql::id_string >::set_image (
-        i.employee_address_value,
-        size,
-        is_null,
-        v);
-      i.employee_address_null = is_null;
-      i.employee_address_size = static_cast<unsigned long> (size);
-      grew = grew || (cap != i.employee_address_value.capacity ());
-    }
-
-    // employee_administrative
-    //
-    {
-      ::std::string const& v =
-        o.employee_administrative;
-
-      bool is_null (false);
-      std::size_t size (0);
-      std::size_t cap (i.employee_administrative_value.capacity ());
-      mysql::value_traits<
-          ::std::string,
-          mysql::id_string >::set_image (
-        i.employee_administrative_value,
-        size,
-        is_null,
-        v);
-      i.employee_administrative_null = is_null;
-      i.employee_administrative_size = static_cast<unsigned long> (size);
-      grew = grew || (cap != i.employee_administrative_value.capacity ());
-    }
-
-    // employee_reg_date
-    //
-    {
-      ::std::string const& v =
-        o.employee_reg_date;
-
-      bool is_null (false);
-      std::size_t size (0);
-      std::size_t cap (i.employee_reg_date_value.capacity ());
-      mysql::value_traits<
-          ::std::string,
-          mysql::id_string >::set_image (
-        i.employee_reg_date_value,
-        size,
-        is_null,
-        v);
-      i.employee_reg_date_null = is_null;
-      i.employee_reg_date_size = static_cast<unsigned long> (size);
-      grew = grew || (cap != i.employee_reg_date_value.capacity ());
+      i.database_name_null = is_null;
+      i.database_name_size = static_cast<unsigned long> (size);
+      grew = grew || (cap != i.database_name_value.capacity ());
     }
 
     return grew;
   }
 
-  void access::object_traits_impl< ::employee, id_mysql >::
+  void access::object_traits_impl< ::companies, id_mysql >::
   init (object_type& o,
         const image_type& i,
         database* db)
@@ -483,158 +324,82 @@ namespace odb
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (db);
 
-    // employee_id
+    // company_id
     //
     {
       long unsigned int& v =
-        o.employee_id;
+        o.company_id;
 
       mysql::value_traits<
           long unsigned int,
           mysql::id_ulonglong >::set_value (
         v,
-        i.employee_id_value,
-        i.employee_id_null);
+        i.company_id_value,
+        i.company_id_null);
     }
 
-    // employee_branch
-    //
-    {
-      ::boost::shared_ptr< ::branch >& v =
-        o.employee_branch;
-
-      typedef object_traits< ::branch > obj_traits;
-      typedef odb::pointer_traits< ::boost::shared_ptr< ::branch > > ptr_traits;
-
-      if (i.employee_branch_null)
-        v = ptr_traits::pointer_type ();
-      else
-      {
-        obj_traits::id_type id;
-        mysql::value_traits<
-            obj_traits::id_type,
-            mysql::id_ulonglong >::set_value (
-          id,
-          i.employee_branch_value,
-          i.employee_branch_null);
-
-        // If a compiler error points to the line below, then
-        // it most likely means that a pointer used in a member
-        // cannot be initialized from an object pointer.
-        //
-        v = ptr_traits::pointer_type (
-          static_cast<mysql::database*> (db)->load<
-            obj_traits::object_type > (id));
-      }
-    }
-
-    // employee_unique
+    // company
     //
     {
       ::std::string& v =
-        o.employee_unique;
+        o.company;
 
       mysql::value_traits<
           ::std::string,
           mysql::id_string >::set_value (
         v,
-        i.employee_unique_value,
-        i.employee_unique_size,
-        i.employee_unique_null);
+        i.company_value,
+        i.company_size,
+        i.company_null);
     }
 
-    // employee_name
+    // database_username
     //
     {
       ::std::string& v =
-        o.employee_name;
+        o.database_username;
 
       mysql::value_traits<
           ::std::string,
           mysql::id_string >::set_value (
         v,
-        i.employee_name_value,
-        i.employee_name_size,
-        i.employee_name_null);
+        i.database_username_value,
+        i.database_username_size,
+        i.database_username_null);
     }
 
-    // employee_gender
+    // database_password
     //
     {
       ::std::string& v =
-        o.employee_gender;
+        o.database_password;
 
       mysql::value_traits<
           ::std::string,
           mysql::id_string >::set_value (
         v,
-        i.employee_gender_value,
-        i.employee_gender_size,
-        i.employee_gender_null);
+        i.database_password_value,
+        i.database_password_size,
+        i.database_password_null);
     }
 
-    // employee_contact
+    // database_name
     //
     {
       ::std::string& v =
-        o.employee_contact;
+        o.database_name;
 
       mysql::value_traits<
           ::std::string,
           mysql::id_string >::set_value (
         v,
-        i.employee_contact_value,
-        i.employee_contact_size,
-        i.employee_contact_null);
-    }
-
-    // employee_address
-    //
-    {
-      ::std::string& v =
-        o.employee_address;
-
-      mysql::value_traits<
-          ::std::string,
-          mysql::id_string >::set_value (
-        v,
-        i.employee_address_value,
-        i.employee_address_size,
-        i.employee_address_null);
-    }
-
-    // employee_administrative
-    //
-    {
-      ::std::string& v =
-        o.employee_administrative;
-
-      mysql::value_traits<
-          ::std::string,
-          mysql::id_string >::set_value (
-        v,
-        i.employee_administrative_value,
-        i.employee_administrative_size,
-        i.employee_administrative_null);
-    }
-
-    // employee_reg_date
-    //
-    {
-      ::std::string& v =
-        o.employee_reg_date;
-
-      mysql::value_traits<
-          ::std::string,
-          mysql::id_string >::set_value (
-        v,
-        i.employee_reg_date_value,
-        i.employee_reg_date_size,
-        i.employee_reg_date_null);
+        i.database_name_value,
+        i.database_name_size,
+        i.database_name_null);
     }
   }
 
-  void access::object_traits_impl< ::employee, id_mysql >::
+  void access::object_traits_impl< ::companies, id_mysql >::
   init (id_image_type& i, const id_type& id)
   {
     {
@@ -647,72 +412,55 @@ namespace odb
     }
   }
 
-  const char access::object_traits_impl< ::employee, id_mysql >::persist_statement[] =
-  "INSERT INTO `employee` "
-  "(`employee_id`, "
-  "`employee_branch`, "
-  "`employee_unique`, "
-  "`employee_name`, "
-  "`employee_gender`, "
-  "`employee_contact`, "
-  "`employee_address`, "
-  "`employee_administrative`, "
-  "`employee_reg_date`) "
+  const char access::object_traits_impl< ::companies, id_mysql >::persist_statement[] =
+  "INSERT INTO `companies` "
+  "(`company_id`, "
+  "`company`, "
+  "`database_username`, "
+  "`database_password`, "
+  "`database_name`) "
   "VALUES "
-  "(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  "(?, ?, ?, ?, ?)";
 
-  const char access::object_traits_impl< ::employee, id_mysql >::find_statement[] =
+  const char access::object_traits_impl< ::companies, id_mysql >::find_statement[] =
   "SELECT "
-  "`employee`.`employee_id`, "
-  "`employee`.`employee_branch`, "
-  "`employee`.`employee_unique`, "
-  "`employee`.`employee_name`, "
-  "`employee`.`employee_gender`, "
-  "`employee`.`employee_contact`, "
-  "`employee`.`employee_address`, "
-  "`employee`.`employee_administrative`, "
-  "`employee`.`employee_reg_date` "
-  "FROM `employee` "
-  "WHERE `employee`.`employee_id`=?";
+  "`companies`.`company_id`, "
+  "`companies`.`company`, "
+  "`companies`.`database_username`, "
+  "`companies`.`database_password`, "
+  "`companies`.`database_name` "
+  "FROM `companies` "
+  "WHERE `companies`.`company_id`=?";
 
-  const char access::object_traits_impl< ::employee, id_mysql >::update_statement[] =
-  "UPDATE `employee` "
+  const char access::object_traits_impl< ::companies, id_mysql >::update_statement[] =
+  "UPDATE `companies` "
   "SET "
-  "`employee_branch`=?, "
-  "`employee_unique`=?, "
-  "`employee_name`=?, "
-  "`employee_gender`=?, "
-  "`employee_contact`=?, "
-  "`employee_address`=?, "
-  "`employee_administrative`=?, "
-  "`employee_reg_date`=? "
-  "WHERE `employee_id`=?";
+  "`company`=?, "
+  "`database_username`=?, "
+  "`database_password`=?, "
+  "`database_name`=? "
+  "WHERE `company_id`=?";
 
-  const char access::object_traits_impl< ::employee, id_mysql >::erase_statement[] =
-  "DELETE FROM `employee` "
-  "WHERE `employee_id`=?";
+  const char access::object_traits_impl< ::companies, id_mysql >::erase_statement[] =
+  "DELETE FROM `companies` "
+  "WHERE `company_id`=?";
 
-  const char access::object_traits_impl< ::employee, id_mysql >::query_statement[] =
-  "SELECT\n"
-  "`employee`.`employee_id`,\n"
-  "`employee`.`employee_branch`,\n"
-  "`employee`.`employee_unique`,\n"
-  "`employee`.`employee_name`,\n"
-  "`employee`.`employee_gender`,\n"
-  "`employee`.`employee_contact`,\n"
-  "`employee`.`employee_address`,\n"
-  "`employee`.`employee_administrative`,\n"
-  "`employee`.`employee_reg_date`\n"
-  "FROM `employee`\n"
-  "LEFT JOIN `branch` AS `employee_branch` ON `employee_branch`.`branch_id`=`employee`.`employee_branch`";
+  const char access::object_traits_impl< ::companies, id_mysql >::query_statement[] =
+  "SELECT "
+  "`companies`.`company_id`, "
+  "`companies`.`company`, "
+  "`companies`.`database_username`, "
+  "`companies`.`database_password`, "
+  "`companies`.`database_name` "
+  "FROM `companies`";
 
-  const char access::object_traits_impl< ::employee, id_mysql >::erase_query_statement[] =
-  "DELETE FROM `employee`";
+  const char access::object_traits_impl< ::companies, id_mysql >::erase_query_statement[] =
+  "DELETE FROM `companies`";
 
-  const char access::object_traits_impl< ::employee, id_mysql >::table_name[] =
-  "`employee`";
+  const char access::object_traits_impl< ::companies, id_mysql >::table_name[] =
+  "`companies`";
 
-  void access::object_traits_impl< ::employee, id_mysql >::
+  void access::object_traits_impl< ::companies, id_mysql >::
   persist (database& db, object_type& obj)
   {
     ODB_POTENTIALLY_UNUSED (db);
@@ -734,7 +482,7 @@ namespace odb
     if (init (im, obj, statement_insert))
       im.version++;
 
-    im.employee_id_value = 0;
+    im.company_id_value = 0;
 
     if (im.version != sts.insert_image_version () ||
         imb.version == 0)
@@ -759,14 +507,14 @@ namespace odb
     if (!st.execute ())
       throw object_already_persistent ();
 
-    obj.employee_id = id (sts.id_image ());
+    obj.company_id = id (sts.id_image ());
 
     callback (db,
               static_cast<const object_type&> (obj),
               callback_event::post_persist);
   }
 
-  void access::object_traits_impl< ::employee, id_mysql >::
+  void access::object_traits_impl< ::companies, id_mysql >::
   update (database& db, const object_type& obj)
   {
     ODB_POTENTIALLY_UNUSED (db);
@@ -782,7 +530,7 @@ namespace odb
       conn.statement_cache ().find_object<object_type> ());
 
     const id_type& id (
-      obj.employee_id);
+      obj.company_id);
     id_image_type& idi (sts.id_image ());
     init (idi, id);
 
@@ -827,7 +575,7 @@ namespace odb
     pointer_cache_traits::update (db, obj);
   }
 
-  void access::object_traits_impl< ::employee, id_mysql >::
+  void access::object_traits_impl< ::companies, id_mysql >::
   erase (database& db, const id_type& id)
   {
     using namespace mysql;
@@ -856,8 +604,8 @@ namespace odb
     pointer_cache_traits::erase (db, id);
   }
 
-  access::object_traits_impl< ::employee, id_mysql >::pointer_type
-  access::object_traits_impl< ::employee, id_mysql >::
+  access::object_traits_impl< ::companies, id_mysql >::pointer_type
+  access::object_traits_impl< ::companies, id_mysql >::
   find (database& db, const id_type& id)
   {
     using namespace mysql;
@@ -912,7 +660,7 @@ namespace odb
     return p;
   }
 
-  bool access::object_traits_impl< ::employee, id_mysql >::
+  bool access::object_traits_impl< ::companies, id_mysql >::
   find (database& db, const id_type& id, object_type& obj)
   {
     using namespace mysql;
@@ -945,7 +693,7 @@ namespace odb
     return true;
   }
 
-  bool access::object_traits_impl< ::employee, id_mysql >::
+  bool access::object_traits_impl< ::companies, id_mysql >::
   reload (database& db, object_type& obj)
   {
     using namespace mysql;
@@ -958,7 +706,7 @@ namespace odb
     statements_type::auto_lock l (sts);
 
     const id_type& id  (
-      obj.employee_id);
+      obj.company_id);
 
     if (!find_ (sts, &id))
       return false;
@@ -975,7 +723,7 @@ namespace odb
     return true;
   }
 
-  bool access::object_traits_impl< ::employee, id_mysql >::
+  bool access::object_traits_impl< ::companies, id_mysql >::
   find_ (statements_type& sts,
          const id_type* id)
   {
@@ -1026,8 +774,8 @@ namespace odb
     return r != select_statement::no_data;
   }
 
-  result< access::object_traits_impl< ::employee, id_mysql >::object_type >
-  access::object_traits_impl< ::employee, id_mysql >::
+  result< access::object_traits_impl< ::companies, id_mysql >::object_type >
+  access::object_traits_impl< ::companies, id_mysql >::
   query (database&, const query_base_type& q)
   {
     using namespace mysql;
@@ -1054,7 +802,7 @@ namespace odb
     std::string text (query_statement);
     if (!q.empty ())
     {
-      text += "\n";
+      text += " ";
       text += q.clause ();
     }
 
@@ -1063,7 +811,7 @@ namespace odb
       new (shared) select_statement (
         conn,
         text,
-        true,
+        false,
         true,
         q.parameters_binding (),
         imb));
@@ -1077,7 +825,7 @@ namespace odb
     return result<object_type> (r);
   }
 
-  unsigned long long access::object_traits_impl< ::employee, id_mysql >::
+  unsigned long long access::object_traits_impl< ::companies, id_mysql >::
   erase_query (database&, const query_base_type& q)
   {
     using namespace mysql;

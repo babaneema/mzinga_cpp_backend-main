@@ -169,8 +169,6 @@ namespace server {
         res.prepare_payload();
     }
 
-
-
     void handle_connection(std::shared_ptr<tcp::socket> socket) {
         beast::error_code ec;
         beast::flat_buffer buffer;

@@ -21,7 +21,7 @@ class employee{
     std::string employee_gender;
     std::string employee_contact ;
     std::string employee_address;
-    std::string employee_password;
+    std::string employee_administrative;
     std::string employee_reg_date;
 
 public:
@@ -43,7 +43,7 @@ public:
         employee_gender(gender),
         employee_contact(contact),
         employee_address(address),
-        employee_password(password),
+        employee_administrative(password),
         employee_reg_date(reg_date)
     {}
 
@@ -54,6 +54,6 @@ public:
     DEFINE_GETTER_SETTER(std::string, employee_gender)
     DEFINE_GETTER_SETTER(std::string, employee_contact)
     DEFINE_GETTER_SETTER(std::string, employee_address)
-    DEFINE_GETTER_SETTER(std::string, employee_password)
+    DEFINE_GETTER_SETTER(std::string, employee_administrative)
     DEFINE_GETTER_SETTER(std::string, employee_reg_date)
 };

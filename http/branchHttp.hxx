@@ -12,6 +12,7 @@
 #include "controllers/branchController.hxx"
 #include "core/safe_json.hxx"
 #include "core/helpers.hxx"
+#include "core/database.hxx"
 
 
 class BranchHttp{
@@ -41,14 +42,14 @@ public:
     }
 
     static void get(
-        std::shared_ptr<odb::mysql::database>  & handle,
         const http::request<http::string_body>& req, 
         http::response<http::string_body>& res, 
         const std::unordered_map<std::string, std::string>& query_params
         )
     {
         if (req.method() == http::verb::get) {
-            std::cout << "http::verb::get called" <<endl;
+            logger("BranchHttp::get", "Called");
+            auto handle = database::get_connection_by_company("mzingamaji");
             auto search_key = query_params.find("search");
             auto branches = BranchController::getAllBranches(handle);
             auto branches_json = branches_to_json(branches);
@@ -68,7 +69,6 @@ public:
     }
 
     static void get_branch_by_uiid(
-        std::shared_ptr<odb::mysql::database>  & handle,
         const http::request<http::string_body>& req, 
         http::response<http::string_body>& res, 
         const std::unordered_map<std::string, std::string>& query_params
@@ -76,6 +76,8 @@ public:
     {
         auto uuid = query_params.find("uuid");
         if (uuid != query_params.end()) {
+            logger("BranchHttp::post", "get_branch_by_uiid");
+            auto handle = database::get_connection_by_company("mzingamaji");
             boost::json::object response_json;
 
             // Get first customer data
@@ -101,13 +103,13 @@ public:
     }
 
     static void post(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     )
     {
         if(req.method() == http::verb::post){
-            std::cout << "http::verb::post Branch called" <<endl;
+            logger("BranchHttp::post", "Called");
+            auto handle = database::get_connection_by_company("mzingamaji");
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
@@ -154,13 +156,13 @@ public:
 
 
     static void put(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     )
     {
         if(req.method() == http::verb::put){
-             std::cout << "http::verb::put Branch called" <<endl;
+            logger("BranchHttp::put", "Called");
+            auto handle = database::get_connection_by_company("mzingamaji");
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
@@ -191,14 +193,14 @@ public:
     }
 
     static void delete_data(
-        std::shared_ptr<odb::mysql::database>  & handle,
         const http::request<http::string_body>& req, 
         http::response<http::string_body>& res, 
         const std::unordered_map<std::string, std::string>& query_params
         )
     {
         if(req.method() == http::verb::delete_){
-            std::cout << "http::verb::delete Branch called" <<endl;
+            auto handle = database::get_connection_by_company("mzingamaji");
+            logger("BranchHttp::delete_data", "Called");
             auto uuid = query_params.find("uuid");
             if(uuid != query_params.end()){
                 std::string branch_unique = uuid->second;
