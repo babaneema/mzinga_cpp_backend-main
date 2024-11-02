@@ -16,6 +16,7 @@
 #include <boost/json.hpp>
 #include <boost/shared_ptr.hpp>
 #include "core/safe_json.hxx"
+#include "core/helpers.hxx"
 
 class EmployeeController {
 public:
@@ -46,6 +47,7 @@ public:
             t.commit();
             return true;
         }catch (const std::exception& e) {
+            logger("EmployeeController::createEmployee", e.what());
             std::cerr << "Error creating employee: " << e.what() << std::endl;
             return false;
         }
@@ -60,6 +62,7 @@ public:
             return employee_data;
 
         }catch (const std::exception& e) {
+            logger("EmployeeController::getEmployeeByUiid", e.what());
             std::cerr << "Error fetching employee by UUID: " << e.what() << std::endl;
             return nullptr;
         }
@@ -74,6 +77,7 @@ public:
             return employee_data;
 
         }catch (const std::exception& e) {
+            logger("EmployeeController::getEmployeeByContact", e.what());
             std::cerr << "Error fetching employee by UUID: " << e.what() << std::endl;
             return nullptr;
         }
@@ -105,6 +109,7 @@ public:
             return true;
 
         }catch (const std::exception& e) {
+            logger("EmployeeController::updateEmployee", e.what());
             std::cerr << "Error updating employee: " << e.what() << std::endl;
             return false;
         }
@@ -124,6 +129,7 @@ public:
             return true;
 
         }catch (const std::exception& e) {
+            logger("EmployeeController::deleteEmployee", e.what());
             std::cerr << "Error deleting employee: " << e.what() << std::endl;
             return false;
         }

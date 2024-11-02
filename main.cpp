@@ -12,7 +12,8 @@
 #include "http/billHttp.hxx"
 #include "http/employeeHttp.hxx"
 #include "http/meterReadHtpp.hxx"
-#include "http/paymentHttp.hxx"
+#include "http/paymentHttp.hxx" 
+#include "http/authHttp.hxx" 
 #include "http/common.hxx"
 
 
@@ -34,6 +35,17 @@ int main(int argc, char* argv[]) {
 
 
     // sendSingleSms("255763096136", "Hello. Sunday Jabil");
+
+    register_route("/api/v1/auth", [](const http::request<http::string_body>& req, 
+                                        http::response<http::string_body>& res, 
+                                        const std::unordered_map<std::string, std::string>& query_params,
+                                        const std::string& session_id) {
+       
+        if(req.method() == http::verb::post){
+            AuthHttp::login(req,res);
+        }
+     
+    });
 
     register_route("/api/v1/branch", [](const http::request<http::string_body>& req, 
                                                         http::response<http::string_body>& res, 

@@ -63,6 +63,7 @@ set(HEADERS
     core/safe_json.hxx
     core/helpers.hxx
     core/sms.hxx
+    core/session.hxx
     
     controllers/addressController.hxx
     controllers/branchController.hxx

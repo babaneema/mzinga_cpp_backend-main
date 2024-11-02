@@ -10,6 +10,7 @@
 #include "../models/users.hxx" 
 #include "../models/users-odb.hxx"
 #include "core/safe_json.hxx"
+#include "core/helpers.hxx"
 
 class UserController {
 public:
@@ -28,6 +29,7 @@ public:
             t.commit();
             return usersList;
         } catch (const std::exception& e) {
+            logger("UserController::getAllUsers", e.what());
             std::cerr << "Error fetching users: " << e.what() << std::endl;
             return usersList;
         }
@@ -42,6 +44,7 @@ public:
             t.commit();
             return user_data;
         } catch (const std::exception& e) {
+            logger("UserController::getUserById", e.what());
             std::cerr << "Error fetching user by ID: " << e.what() << std::endl;
             return nullptr;
         }
@@ -55,6 +58,7 @@ public:
             t.commit();
             return true;
         } catch (const std::exception& e) {
+            logger("UserController::createUser", e.what());
             std::cerr << "Error creating user: " << e.what() << std::endl;
             return false;
         }
@@ -68,6 +72,7 @@ public:
             t.commit();
             return user_data;
         } catch (const std::exception& e) {
+            logger("UserController::getUserByPhone", e.what());
             std::cerr << "Error fetching user by phone: " << e.what() << std::endl;
             return nullptr;
         }
@@ -97,6 +102,7 @@ public:
             t.commit();
             return true;
         } catch (const std::exception& e) {
+            logger("UserController::updateUser", e.what());
             std::cerr << "Error updating user: " << e.what() << std::endl;
             return false;
         }
@@ -116,6 +122,7 @@ public:
             t.commit();
             return true;
         } catch (const std::exception& e) {
+            logger("deleteUser::deleteUser", e.what());
             std::cerr << "Error deleting user: " << e.what() << std::endl;
             return false;
         }
