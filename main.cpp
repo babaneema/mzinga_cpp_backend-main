@@ -76,6 +76,33 @@ int main(int argc, char* argv[]) {
         }
 
     });
+
+     register_route("/api/v1/unit", [](const http::request<http::string_body>& req, 
+                                                    http::response<http::string_body>& res, 
+                                                    const std::unordered_map<std::string, std::string>& query_params
+                                                    ) {
+        if (req.method() == http::verb::get){
+            auto uuid = query_params.find("uuid");
+            if(uuid != query_params.end()){
+                UnitHttp::get_unit_by_uiid(req,res,query_params);
+            }
+            else{
+                UnitHttp::get(req,res);
+            }
+        }
+
+        if(req.method() == http::verb::post){
+            UnitHttp::post(req,res);
+        }
+        
+        if(req.method() == http::verb::put){
+            UnitHttp::put(req,res);
+        }
+
+        if(req.method() == http::verb::delete_){
+            UnitHttp::delete_data(req,res,query_params);
+        }
+    });
     
     // register_route("/api/v1/customer", [&handle](const http::request<http::string_body>& req, 
     //                                                     http::response<http::string_body>& res, 
@@ -110,32 +137,7 @@ int main(int argc, char* argv[]) {
     //     }
     // });
 
-    // register_route("/api/v1/unit", [&handle](const http::request<http::string_body>& req, 
-    //                                                 http::response<http::string_body>& res, 
-    //                                                 const std::unordered_map<std::string, std::string>& query_params,
-    //                                                 const std::string& session_id) {
-    //     if (req.method() == http::verb::get){
-    //         auto uuid = query_params.find("uuid");
-    //         if(uuid != query_params.end()){
-    //             UnitHttp::get_unit_by_uiid(handle,req,res,query_params);
-    //         }
-    //         else{
-    //             UnitHttp::get(handle,req,res);
-    //         }
-    //     }
-
-    //     if(req.method() == http::verb::post){
-    //         UnitHttp::post(handle,req,res);
-    //     }
-        
-    //     if(req.method() == http::verb::put){
-    //         UnitHttp::put(handle,req,res);
-    //     }
-
-    //     if(req.method() == http::verb::delete_){
-    //         UnitHttp::delete_data(handle,req,res,query_params);
-    //     }
-    // });
+   
 
     
 

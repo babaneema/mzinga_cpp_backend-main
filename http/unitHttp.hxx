@@ -1,11 +1,15 @@
 #pragma once
+#include "core/safe_json.hxx"
+#include "core/helpers.hxx"
 #include "core/database.hxx"
-#include "core/server.hxx"
-#include <boost/json.hpp>
+#include "core/session.hxx"
+#include "core/session_macro.hxx"
+
 #include "controllers/unitController.hxx"
 #include "controllers/branchController.hxx"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/json.hpp>
 
 class UnitHttp{
 public:
@@ -33,17 +37,35 @@ public:
     }
 
     static void get(
-        std::shared_ptr<odb::mysql::database>  & handle,
         const http::request<http::string_body>& req, 
         http::response<http::string_body>& res
         )
     {
         if (req.method() == http::verb::get) {
-            std::cout << "http::verb::get called" <<endl;
+            logger("UnitHttp::get", "Called");
+
+            // check for authentication and authorization 
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+            
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
 
             auto units = UnitController::getAllUnits(handle);
-            auto units_json = units_to_json(units);
-            std::string jsonString = boost::json::serialize(units_json);
+            response_json["unit_data"] = units_to_json(units);
+            std::string jsonString = boost::json::serialize(response_json);
 
             res.set(http::field::content_type, "application/json");
             res.body() = jsonString;
@@ -52,7 +74,6 @@ public:
     }
     
     static void get_unit_by_uiid(
-        std::shared_ptr<odb::mysql::database>  & handle,
         const http::request<http::string_body>& req, 
         http::response<http::string_body>& res, 
         const std::unordered_map<std::string, std::string>& query_params
@@ -60,7 +81,27 @@ public:
     {
         auto uuid = query_params.find("uuid");
         if (uuid != query_params.end()) {
+
+            logger("UnitHttp::get_unit_by_uiid", "Called");
+
+            // check for authentication and authorization 
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+            
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
             boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
 
             // Get first customer data
             std::string unit_uuid = uuid->second;
@@ -85,18 +126,32 @@ public:
     }
 
     static void post(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::post) {
-            std::cout << "http::verb::post Unit called" << std::endl;
+            logger("UnitHttp::post", "Called");
+            // check for authentication and authorization 
+            
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Invalid JSON format. Expected an object."})";
                 res.prepare_payload();
                 return;
             }
@@ -113,7 +168,7 @@ public:
             if(!branch_d){ // this should not happen
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Failed to get branch"})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to get branch"})";
                 res.prepare_payload();
                 return;
             }
@@ -127,45 +182,68 @@ public:
 
             if (UnitController::createUnit(handle, unit_d)) {
                 res.result(http::status::ok);
-                res.body() = R"({"message": "Unit created successfully!"})";
+                res.body() = R"({"auth": "true","permission": "true","message": "Unit created successfully!"})";
+                res.prepare_payload();
+                return;
             } else {
                 res.result(http::status::bad_request);
                 res.body() = R"({"error": "Failed to create unit"})";
+                res.prepare_payload();
+                return;
             }
-            res.prepare_payload();
+            
         } else {
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
-            res.body() = R"({"error": "Bad Request."})";
+            res.body() = R"({"auth": "false","false": "true","error": "Bad Request."})";
             res.prepare_payload();
+            return;
         }
     }
 
     static void put(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::put) {
-            std::cout << "http::verb::put Unit called" << std::endl;
+            logger("UnitHttp::put", "Called");
+            // check for authentication and authorization 
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+            
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Invalid JSON format. Expected an object."})";
                 res.prepare_payload();
                 return;
             }
 
             if (UnitController::updateUnit(handle, parsedValue)) {
                 res.result(http::status::ok);
-                res.body() = R"({"message": "Unit updated successfully!"})";
+                res.body() = R"({"auth": "true","permission": "true","message": "Unit updated successfully!"})";
+                res.prepare_payload();
+                return;
             } else {
                 res.result(http::status::bad_request);
-                res.body() = R"({"error": "Failed to update unit"})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to update unit"})";
+                res.prepare_payload();
+                return;
             }
-            res.prepare_payload();
+            
         } else {
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
@@ -175,35 +253,55 @@ public:
     }
 
     static void delete_data(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res,
         const std::unordered_map<std::string, std::string>& query_params
     ) {
         if (req.method() == http::verb::delete_) {
-            std::cout << "http::verb::delete Unit called" << std::endl;
+            logger("UnitHttp::delete", "Called");
+            // check for authentication and authorization 
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+            
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
             auto uuid = query_params.find("uuid");
             if (uuid != query_params.end()) {
                 std::string unit_unique = uuid->second;
                 if (UnitController::deleteUnit(handle, unit_unique)) {
                     res.result(http::status::ok);
-                    res.body() = R"({"message": "Unit deleted successfully!"})";
+                    res.body() = R"({"auth": "true","permission": "true","message": "Unit deleted successfully!"})";
+                    res.prepare_payload();
+                    return;
                 } else {
                     res.result(http::status::bad_request);
-                    res.body() = R"({"error": "Failed to delete unit"})";
+                    res.body() = R"({"auth": "true","permission": "true","error": "Failed to delete unit"})";
+                    res.prepare_payload();
+                    return;
                 }
                 res.prepare_payload();
             } else {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Bad Request."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Bad Request."})";
                 res.prepare_payload();
+                return;
             }
         } else {
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
-            res.body() = R"({"error": "Bad Request."})";
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
             res.prepare_payload();
+            return;
         }
     }
 
