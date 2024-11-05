@@ -64,6 +64,7 @@ set(HEADERS
     core/helpers.hxx
     core/sms.hxx
     core/session.hxx
+    core/session_macro.hxx
     
     controllers/addressController.hxx
     controllers/branchController.hxx

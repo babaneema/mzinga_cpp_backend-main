@@ -38,8 +38,8 @@ int main(int argc, char* argv[]) {
 
     register_route("/api/v1/auth", [](const http::request<http::string_body>& req, 
                                         http::response<http::string_body>& res, 
-                                        const std::unordered_map<std::string, std::string>& query_params,
-                                        const std::string& session_id) {
+                                        const std::unordered_map<std::string, std::string>& query_params
+                                        ) {
        
         if(req.method() == http::verb::post){
             AuthHttp::login(req,res);
@@ -49,9 +49,9 @@ int main(int argc, char* argv[]) {
 
     register_route("/api/v1/branch", [](const http::request<http::string_body>& req, 
                                                         http::response<http::string_body>& res, 
-                                                        const std::unordered_map<std::string, std::string>& query_params,
+                                                        const std::unordered_map<std::string, std::string>& query_params
          
-                                                        const std::string& session_id) {
+                                                        ) {
         if (req.method() == http::verb::get){
             auto uuid = query_params.find("uuid");
             if(uuid != query_params.end()){
@@ -268,8 +268,8 @@ int main(int argc, char* argv[]) {
 
     register_route("/api/v1/employee", [](const http::request<http::string_body>& req, 
                                         http::response<http::string_body>& res, 
-                                        const std::unordered_map<std::string, std::string>& query_params,
-                                        const std::string& session_id) {
+                                        const std::unordered_map<std::string, std::string>& query_params
+                                        ) {
         if (req.method() == http::verb::get){
             auto uuid = query_params.find("uuid");
             if(uuid != query_params.end()){

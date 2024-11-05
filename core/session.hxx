@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <vector>
 #include <string>
@@ -14,6 +15,7 @@ namespace http = beast::http;
 class ServerSession {
 public:
     struct Session {
+        std::string phone;
         std::string company;
         std::string uuid;
         std::string time = getCurrentDate();
@@ -24,11 +26,11 @@ private:
 
 public:
     // Setter to add a new session and return UUID
-    static std::string set_session(const std::string& company) {
+    static std::string set_session(const std::string& phone, const std::string& company) {
         boost::uuids::uuid uuid = boost::uuids::random_generator()();
         std::string uuid_str = boost::uuids::to_string(uuid);
 
-        session_vector.push_back(Session{ company, uuid_str});
+        session_vector.push_back(Session{phone, company, uuid_str});
         return uuid_str;
     }
 
@@ -59,7 +61,6 @@ public:
 
     static boost::optional<std::string>  check_session_in_request(const http::request<http::string_body>& req) {
         auto session_cookie = req[http::field::cookie];
-        
         if (session_cookie.empty() || session_cookie.find("uuid=") == std::string::npos) {
             return boost::none;
         }
@@ -77,9 +78,10 @@ public:
         return boost::none;
     }
 
-    static void set_session_in_response(http::response<http::string_body>& res, const std::string& company) {
-        std::string uuid = set_session(company);
+    static std::string set_session_in_response(http::response<http::string_body>& res, const std::string& phone, const std::string& company) {
+        std::string uuid = set_session(phone,company);
         res.set(http::field::set_cookie, "uuid=" + uuid + "; HttpOnly; Path=/");
+        return uuid;
     }
 
     static bool delete_session_by_uuid(const std::string& uuid) {

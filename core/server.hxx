@@ -21,12 +21,12 @@ namespace beast = boost::beast;
 namespace http = beast::http;
 namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
-using RouteHandler = std::function<void(const http::request<http::string_body>&, http::response<http::string_body>&, const std::unordered_map<std::string, std::string>&, const std::string&)>;
+using RouteHandler = std::function<void(const http::request<http::string_body>&, http::response<http::string_body>&, const std::unordered_map<std::string, std::string>&)>;
 
 namespace server {
     std::unordered_map<std::string, RouteHandler> routes;
-    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> sessions;
-    std::mutex sessions_mutex;
+    // std::unordered_map<std::string, std::unordered_map<std::string, std::string>> sessions;
+    // std::mutex sessions_mutex;
 
     std::unordered_set<std::string> allowed_origins;
     std::string allowed_methods = "GET, POST, PUT, DELETE, OPTIONS";
@@ -69,35 +69,35 @@ namespace server {
         return params;
     }
 
-    std::string create_session() {
-        boost::uuids::random_generator gen;
-        std::string session_id = boost::uuids::to_string(gen());
+    // std::string create_session() {
+    //     boost::uuids::random_generator gen;
+    //     std::string session_id = boost::uuids::to_string(gen());
         
-        std::lock_guard<std::mutex> lock(sessions_mutex);
-        sessions[session_id] = std::unordered_map<std::string, std::string>();
-        sessions[session_id]["created_at"] = std::to_string(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
-        return session_id;
-    }
+    //     std::lock_guard<std::mutex> lock(sessions_mutex);
+    //     sessions[session_id] = std::unordered_map<std::string, std::string>();
+    //     sessions[session_id]["created_at"] = std::to_string(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    //     return session_id;
+    // }
 
-    void cleanup_sessions() {
-        auto now = std::chrono::system_clock::now();
-        std::lock_guard<std::mutex> lock(sessions_mutex);
-        for (auto it = sessions.begin(); it != sessions.end();) {
-            auto created_at = std::chrono::system_clock::from_time_t(std::stoll(it->second["created_at"]));
-            if (now - created_at > std::chrono::minutes(30)) {
-                it = sessions.erase(it);
-            } else {
-                ++it;
-            }
-        }
-    }
+    // void cleanup_sessions() {
+    //     auto now = std::chrono::system_clock::now();
+    //     std::lock_guard<std::mutex> lock(sessions_mutex);
+    //     for (auto it = sessions.begin(); it != sessions.end();) {
+    //         auto created_at = std::chrono::system_clock::from_time_t(std::stoll(it->second["created_at"]));
+    //         if (now - created_at > std::chrono::minutes(30)) {
+    //             it = sessions.erase(it);
+    //         } else {
+    //             ++it;
+    //         }
+    //     }
+    // }
 
-    void session_cleanup_thread() {
-        while (true) {
-            std::this_thread::sleep_for(std::chrono::minutes(5));
-            cleanup_sessions();
-        }
-    }
+    // void session_cleanup_thread() {
+    //     while (true) {
+    //         std::this_thread::sleep_for(std::chrono::minutes(5));
+    //         cleanup_sessions();
+    //     }
+    // }
 
     void set_cors_headers(const http::request<http::string_body>& req, http::response<http::string_body>& res) {
         if (req.find(http::field::origin) != req.end()) {
@@ -109,6 +109,7 @@ namespace server {
                 res.set(http::field::access_control_allow_origin, orign_str);
                 res.set(http::field::access_control_allow_methods, "GET, POST, PUT, DELETE, OPTIONS");
                 res.set(http::field::access_control_allow_headers, "Content-Type");
+                res.set(http::field::access_control_allow_credentials, "true");
 
             } else {
                 // If the origin is not in the allowed list, don't set the header
@@ -142,24 +143,25 @@ namespace server {
         std::string path = (pos != std::string::npos) ? target.substr(0, pos) : target;
         std::unordered_map<std::string, std::string> query_params = parse_query_params(target);
 
-        std::string session_id;
-        auto session_cookie = req[http::field::cookie];
-        if (session_cookie.empty() || session_cookie.find("session_id=") == std::string::npos) {
-            session_id = create_session();
-        } else {
-            session_id = session_cookie.substr(session_cookie.find("session_id=") + 11);
-            session_id = session_id.substr(0, session_id.find(';'));
-        }
+        // std::string session_id;
+        // auto session_cookie = req[http::field::cookie];
+        // if (session_cookie.empty() || session_cookie.find("session_id=") == std::string::npos) {
+        //     session_id = create_session();
+        // } else {
+        //     session_id = session_cookie.substr(session_cookie.find("session_id=") + 11);
+        //     session_id = session_id.substr(0, session_id.find(';'));
+        // }
 
-        res.set(http::field::set_cookie, "session_id=" + session_id + "; HttpOnly; SameSite=None");
+        // res.set(http::field::set_cookie, "session_id=" + session_id + "; HttpOnly; SameSite=None");
 
-        res.set(http::field::access_control_allow_origin, "*");
-        res.set(http::field::access_control_allow_methods, "GET, POST, PUT, DELETE, OPTIONS");
-        res.set(http::field::access_control_allow_headers, "Content-Type, Authorization");
+        // res.set(http::field::access_control_allow_origin, "*");
+        // res.set(http::field::access_control_allow_methods, "GET, POST, PUT, DELETE, OPTIONS");
+        // res.set(http::field::access_control_allow_headers, "Content-Type, Authorization");
 
         auto route_iter = routes.find(path);
         if (route_iter != routes.end()) {
-            route_iter->second(req, res, query_params, session_id);
+            // route_iter->second(req, res, query_params, session_id);
+            route_iter->second(req, res, query_params);
         } else {
             res.result(http::status::not_found);
             res.set(http::field::content_type, "text/plain");
@@ -209,8 +211,8 @@ namespace server {
 
             std::cout << "Server running on port 8080 with " << num_threads << " threads" << std::endl;
 
-            std::thread cleanup_thread(session_cleanup_thread);
-            cleanup_thread.detach();
+            // std::thread cleanup_thread(session_cleanup_thread);
+            // cleanup_thread.detach();
 
             std::vector<std::thread> threads;
             for (int i = 0; i < num_threads - 1; ++i) {

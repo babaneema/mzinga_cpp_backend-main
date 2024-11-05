@@ -10,9 +10,12 @@
 #include <iomanip>
 
 #include "controllers/branchController.hxx"
+#include "controllers/employeeController.hxx"
 #include "core/safe_json.hxx"
 #include "core/helpers.hxx"
 #include "core/database.hxx"
+#include "core/session.hxx"
+#include "core/session_macro.hxx"
 
 
 class BranchHttp{
@@ -49,11 +52,30 @@ public:
     {
         if (req.method() == http::verb::get) {
             logger("BranchHttp::get", "Called");
-            auto handle = database::get_connection_by_company("mzingamaji");
+            // check for authentication and authorization 
+
+            boost::shared_ptr<employee> employee_d;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_d);
+            std::string administrative = employee_d->get_employee_administrative();
+            
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
+
             auto search_key = query_params.find("search");
             auto branches = BranchController::getAllBranches(handle);
             auto branches_json = branches_to_json(branches);
-            std::string jsonString = boost::json::serialize(branches_json);
+            response_json["branch_data"] = branches_json;
+            std::string jsonString = boost::json::serialize(response_json);
 
             res.result(beast::http::status::ok);
             res.set(http::field::content_type, "application/json");
@@ -62,7 +84,7 @@ public:
         }else{
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
-            res.body() = R"({"error": "Bad Request."})";
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
             res.prepare_payload();
             return;
         }
@@ -77,8 +99,23 @@ public:
         auto uuid = query_params.find("uuid");
         if (uuid != query_params.end()) {
             logger("BranchHttp::post", "get_branch_by_uiid");
-            auto handle = database::get_connection_by_company("mzingamaji");
+
+            boost::shared_ptr<employee> employee_d;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_d);
+            std::string administrative = employee_d->get_employee_administrative();
+            
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
             boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
 
             // Get first customer data
             std::string branch_uui = uuid->second;
@@ -109,9 +146,21 @@ public:
     {
         if(req.method() == http::verb::post){
             logger("BranchHttp::post", "Called");
-            auto handle = database::get_connection_by_company("mzingamaji");
-            boost::json::value parsedValue = boost::json::parse(req.body());
 
+            boost::shared_ptr<employee> employee_d;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_d);
+            std::string administrative = employee_d->get_employee_administrative();
+            
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::value parsedValue = boost::json::parse(req.body());
             if (!parsedValue.is_object()) {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
@@ -120,8 +169,8 @@ public:
                 return;
             }
 
-            boost::uuids::uuid uuid = boost::uuids::random_generator()();
-            std::string branch_unique = boost::uuids::to_string(uuid);
+            boost::uuids::uuid uuid_u = boost::uuids::random_generator()();
+            std::string branch_unique = boost::uuids::to_string(uuid_u);
 
             std::string branch_reg_date = getCurrentDate();
 
@@ -162,7 +211,20 @@ public:
     {
         if(req.method() == http::verb::put){
             logger("BranchHttp::put", "Called");
-            auto handle = database::get_connection_by_company("mzingamaji");
+
+            boost::shared_ptr<employee> employee_d;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_d);
+            std::string administrative = employee_d->get_employee_administrative();
+            
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
@@ -199,8 +261,22 @@ public:
         )
     {
         if(req.method() == http::verb::delete_){
-            auto handle = database::get_connection_by_company("mzingamaji");
+
             logger("BranchHttp::delete_data", "Called");
+
+             boost::shared_ptr<employee> employee_d;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_d);
+            std::string administrative = employee_d->get_employee_administrative();
+            
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
             auto uuid = query_params.find("uuid");
             if(uuid != query_params.end()){
                 std::string branch_unique = uuid->second;

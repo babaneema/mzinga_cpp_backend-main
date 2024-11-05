@@ -67,11 +67,39 @@ public:
                 return;
             }
 
-            ServerSession::set_session_in_response(res, user->get_company());
+            std::string s_uuid =  ServerSession::set_session_in_response(res, phone, user->get_company());
+            // next route
+            auto user_handle = database::get_connection_by_company(user->get_company());
+            auto employee_d = EmployeeController::getEmployeeByContact(user_handle, phone);
+
+            if(!employee_d){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            std::string administrative = employee_d->get_employee_administrative();
+            res.set("User-Type", administrative);
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.version(req.version());
+                res.result(beast::http::status::ok);
+                res.set(http::field::content_type, "application/json");
+                std::string responseBody = R"({"auth": "true", "permission": "true", "user": "Worker","data": ")" + s_uuid + R"("})";
+                res.body() = responseBody;
+                res.prepare_payload();
+                return;
+            }
+
             res.version(req.version());
             res.result(beast::http::status::ok);
-            res.body() = R"({"auth": "true","data": "Authenticated"})";
+            res.set(http::field::content_type, "application/json");
+            std::string responseBody = R"({"auth": "true", "permission": "true","user": "Admin","data": ")" + s_uuid + R"("})";
+            res.body() = responseBody;
             res.prepare_payload();
+            return;
         }else{
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");

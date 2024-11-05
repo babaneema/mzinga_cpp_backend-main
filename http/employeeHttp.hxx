@@ -14,7 +14,8 @@
 #include "controllers/usersController.hxx"
 #include "core/safe_json.hxx"
 #include "core/helpers.hxx"
-
+#include "core/session.hxx"
+#include "core/session_macro.hxx"
 
 class EmployeeHttp {
 public:
@@ -51,13 +52,28 @@ public:
     ) {
         if (req.method() == http::verb::get) {
             logger("EmployeeHttp::get", "Called");
-            auto handle = database::get_connection_by_company("mzingamaji");
-            
+
+            boost::shared_ptr<employee> employee_d;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_d);
+            std::string administrative = employee_d->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
 
             // Fetch all employees from the controller
             auto employees = EmployeeController::getAllEmployees(handle);
-            auto employees_json = employees_to_json(employees);
-            std::string jsonString = boost::json::serialize(employees_json);
+            response_json["employee_data"]  = employees_to_json(employees);
+            std::string jsonString = boost::json::serialize(response_json);
 
             // Set the response content type and payload
             res.set(http::field::content_type, "application/json");
@@ -73,9 +89,21 @@ public:
     {
         if(req.method() == http::verb::post){
             logger("EmployeeHttp::post", "Called");
-            boost::json::value parsedValue = boost::json::parse(req.body());
-            auto handle = database::get_connection_by_company("mzingamaji");
 
+            boost::shared_ptr<employee> employee_s;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_s);
+            std::string administrative = employee_s->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::value parsedValue = boost::json::parse(req.body());
             if (!parsedValue.is_object()) {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
@@ -98,12 +126,13 @@ public:
             std::string password    = safe_get_value<std::string>(jsonBody, "employee_password", "employee_password"); 
             std::string branch_     = safe_get_value<std::string>(jsonBody, "employee_branch", "uuid");
            
+            std::cout << "branch_" << branch_;
             
             auto branch_d = BranchController::getBranchByUiid(handle, branch_);
             if(!branch_d){ // this should not happen
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Failed to get branch customer"})";
+                res.body() = R"({"error": "Failed to get branch Employee"})";
                 res.prepare_payload();
                 return;
             }
