@@ -53,9 +53,9 @@ public:
         if (req.method() == http::verb::get) {
             logger("EmployeeHttp::get", "Called");
 
-            boost::shared_ptr<employee> employee_d;
-            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_d);
-            std::string administrative = employee_d->get_employee_administrative();
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
 
             // Worker, Manager & Administrator
             if(administrative == "Worker"){
@@ -90,9 +90,9 @@ public:
         if(req.method() == http::verb::post){
             logger("EmployeeHttp::post", "Called");
 
-            boost::shared_ptr<employee> employee_s;
-            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_s);
-            std::string administrative = employee_s->get_employee_administrative();
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
 
             // Worker, Manager & Administrator
             if(administrative == "Worker"){
@@ -111,6 +111,7 @@ public:
                 res.prepare_payload();
                 return;
             }
+            std::cout << "Called 6" <<std::endl;
 
             boost::uuids::uuid uuid = boost::uuids::random_generator()();
             std::string employee_unique = boost::uuids::to_string(uuid);
@@ -125,14 +126,12 @@ public:
             std::string admin       = safe_get_value<std::string>(jsonBody, "employee_administrative", "employee_administrative"); 
             std::string password    = safe_get_value<std::string>(jsonBody, "employee_password", "employee_password"); 
             std::string branch_     = safe_get_value<std::string>(jsonBody, "employee_branch", "uuid");
-           
-            std::cout << "branch_" << branch_;
             
             auto branch_d = BranchController::getBranchByUiid(handle, branch_);
             if(!branch_d){ // this should not happen
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Failed to get branch Employee"})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to get branch Employee"})";
                 res.prepare_payload();
                 return;
             }
@@ -146,7 +145,7 @@ public:
                 admin,
                 employee_reg_date
             );
-
+            std::cout << "Called 9" <<std::endl;
             if (EmployeeController::createEmployee(handle, employee_d)) {
                 // create user record. 
                 std::string company = "mzingamaji";
@@ -159,20 +158,22 @@ public:
                 );
                 auto admin_handle = database::get_connection_by_company("admin");
                 UserController::createUser(admin_handle,user_d);
-
                 res.version(req.version());
                 res.result(beast::http::status::ok);
-                res.body() = R"({"message": "Employee created successfully!"})";
-            }else{                
+                res.body() = R"({"auth": "true","permission": "true","message": "Employee created successfully!"})";
+                res.prepare_payload();
+                return;
+            }else{               
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Failed to create branch"})";
+                res.body() = R"({"auth": "true","permission": "false","error": "Failed to create branch"})";
+                res.prepare_payload();
+                return;
             }
-            res.prepare_payload();
         }else{
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
-            res.body() = R"({"error": "Bad Request."})";
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
             res.prepare_payload();
             return;
         }

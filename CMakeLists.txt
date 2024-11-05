@@ -84,7 +84,7 @@ set(HEADERS
 
     http/branchHttp.hxx
     http/common.hxx
-    http/cusomerHttp.hxx
+    http/customerHttp.hxx
     http/unitHttp.hxx
     http/meterHttp.hxx
     http/billHttp.hxx

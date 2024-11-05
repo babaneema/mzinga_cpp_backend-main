@@ -5,7 +5,7 @@
 #include "controllers/meterController.hxx"
 #include "controllers/customerController.hxx"
 #include "http/meterHttp.hxx"
-#include "http/cusomerHttp.hxx"
+#include "http/customerHttp.hxx"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/uuid/uuid.hpp>

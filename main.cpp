@@ -6,7 +6,7 @@
 #include <boost/thread.hpp>
 
 #include "http/branchHttp.hxx"
-#include "http/cusomerHttp.hxx"
+#include "http/customerHttp.hxx"
 #include "http/unitHttp.hxx"
 #include "http/meterHttp.hxx"
 #include "http/billHttp.hxx"
@@ -104,38 +104,36 @@ int main(int argc, char* argv[]) {
         }
     });
     
-    // register_route("/api/v1/customer", [&handle](const http::request<http::string_body>& req, 
-    //                                                     http::response<http::string_body>& res, 
-    //                                                     const std::unordered_map<std::string, std::string>& query_params,
-    //                                                     const std::string& session_id) {
-    //     if (req.method() == http::verb::get){
-    //         // TODO:
-    //         // WORK ON ID ISSUES
-    //         auto uuid = query_params.find("uuid");
-    //         auto id = query_params.find("id");
+    register_route("/api/v1/customer", [](const http::request<http::string_body>& req, 
+                                                        http::response<http::string_body>& res, 
+                                                        const std::unordered_map<std::string, std::string>& query_params
+                                                        ) {
+        if (req.method() == http::verb::get){
+            auto uuid = query_params.find("uuid");
+            auto id = query_params.find("id");
             
-    //         if(uuid != query_params.end()){
-    //             CustomerHttp::get_uiid_full_data(handle,req,res,query_params);
-    //         }else if(id != query_params.end()){
-    //             CustomerHttp::getCustomerById(handle,req,res,query_params);
-    //         }
-    //         else{
-    //             CustomerHttp::get(handle,req,res);
-    //         }
-    //     }
+            if(uuid != query_params.end()){
+                // CustomerHttp::get_uiid_full_data(req,res,query_params);
+            }else if(id != query_params.end()){
+                // CustomerHttp::getCustomerById(req,res,query_params);
+            }
+            else{
+                CustomerHttp::get(req,res);
+            }
+        }
 
-    //     if(req.method() == http::verb::post){
-    //         CustomerHttp::post(handle,req,res);
-    //     }
+        // if(req.method() == http::verb::post){
+        //     CustomerHttp::post(req,res);
+        // }
         
-    //     if(req.method() == http::verb::put){
-    //         CustomerHttp::put(handle,req,res);
-    //     }
+        // if(req.method() == http::verb::put){
+        //     CustomerHttp::put(req,res);
+        // }
 
-    //     if(req.method() == http::verb::delete_){
-    //         CustomerHttp::delete_data(handle,req,res,query_params);
-    //     }
-    // });
+        // if(req.method() == http::verb::delete_){
+        //     CustomerHttp::delete_data(req,res,query_params);
+        // }
+    });
 
    
 
