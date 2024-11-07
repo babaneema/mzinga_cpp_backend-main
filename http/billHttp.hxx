@@ -1,18 +1,24 @@
 #pragma once
-#include "core/database.hxx"
-#include "core/server.hxx"
-#include <boost/json.hpp>
 #include "controllers/billController.hxx"
 #include "controllers/unitController.hxx"
 #include "controllers/paymentController.hxx"
+
 #include "http/meterHttp.hxx"
-#include "core/safe_json.hxx"
+
 #include "core/sms.hxx"
+#include "core/safe_json.hxx"
+#include "core/helpers.hxx"
+#include "core/session.hxx"
+#include "core/database.hxx"
+#include "core/server.hxx"
+#include "core/session_macro.hxx"
+
 
 #include <boost/shared_ptr.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/json.hpp>
 #include <iomanip>
 #include <sstream>
 
@@ -54,68 +60,131 @@ public:
 
     // GET all bills
     static void get(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req, 
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::get) {
-            std::cout << "http::verb::get called" << std::endl;
+            logger("BillHttp::get", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
 
             auto bills = BillController::getAllBills(handle);
-            auto bills_json = bills_to_json(bills);
-            std::string jsonString = boost::json::serialize(bills_json);
+            response_json["bill_data"] = bills_to_json(bills);
+            std::string jsonString = boost::json::serialize(response_json);
 
             res.set(http::field::content_type, "application/json");
             res.body() = jsonString;
             res.prepare_payload();
+            return;
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
         }
     }
 
     // GET bill by UUID
     static void getByUuid(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res,
         const std::unordered_map<std::string, std::string>& query_params
     ) {
         if (req.method() == http::verb::get) {
-            std::cout << "getByUuid() " <<endl;
+            logger("BillHttp::getByUuid", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
+
             auto uuid = query_params.find("uuid");
             if (uuid != query_params.end()) {
                 std::string bill_unique = uuid->second;
                 auto bill_d = BillController::getBillByUuid(handle, bill_unique);
                 if (bill_d) {
-                    boost::json::object bill_json = bill_to_json(bill_d);
-                    std::string jsonString = boost::json::serialize(bill_json);
+                    response_json["bill_data"]  = bill_to_json(bill_d);
+                    std::string jsonString = boost::json::serialize(response_json);
                     res.set(http::field::content_type, "application/json");
                     res.body() = jsonString;
+                    res.prepare_payload();
+                    return;
                 } else {
                     res.result(http::status::not_found);
-                    res.body() = R"({"error": "Bill not found"})";
+                    res.body() = R"({"auth": "true","permission": "true","error": "Bill not found"})";
+                    res.prepare_payload();
+                    return;
                 }
-                res.prepare_payload();
+                
             } else {
                 res.result(http::status::bad_request);
-                res.body() = R"({"error": "UUID parameter is missing."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "UUID parameter is missing."})";
                 res.prepare_payload();
+                return;
             }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
         }
     }
 
     // POST to create a new bill
     static void post(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::post) {
-            std::cout << "http::verb::post Bill called" << std::endl;
+            logger("BillHttp::post", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+                res.body() = R"({"auth": "true","permission": "false","error": "Invalid JSON format. Expected an object."})";
                 res.prepare_payload();
                 return;
             }
@@ -132,10 +201,9 @@ public:
             std::cout << "meter_unique " << meter_unique <<endl;
             auto meter_d = MeterController::getMeterByUiid(handle, meter_unique); 
             if(!meter_d){
-                std::cout << "called here 2 " <<endl;
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Failed to get meter data"})";
+                res.body() = R"({"auth": "true","permission": "false","error": "Failed to get meter data"})";
                 res.prepare_payload();
                 return;
             }
@@ -159,7 +227,7 @@ public:
                 std::cout << "called here 3 " <<endl;
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Units can not be negative"})";
+                res.body() = R"({"auth": "true","permission": "false","error": "Units can not be negative"})";
                 res.prepare_payload();
                 return;
             }
@@ -194,74 +262,124 @@ public:
                 sendSingleSms(phone_number, massage);
                 std::string sms = "";
                 res.result(http::status::ok);
-                res.body() = R"({"message": "Bill created successfully!"})";
+                res.body() = R"({"auth": "true","permission": "false","message": "Bill created successfully!"})";
                 res.prepare_payload();
                 return;
             } else {
                 std::cout << "called here 4 " <<endl;
                 res.result(http::status::bad_request);
-                res.body() = R"({"error": "Failed to create bill"})";
+                res.body() = R"({"auth": "true","permission": "false","error": "Failed to create bill"})";
                 res.prepare_payload();
                 return;
             }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
         }
     }
 
     // PUT to update an existing bill
     static void put(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::put) {
-            std::cout << "http::verb::put Bill called" << std::endl;
+            logger("BillHttp::put", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Invalid JSON format. Expected an object."})";
                 res.prepare_payload();
                 return;
             }
 
             if (BillController::updateBill(handle, parsedValue)) {
                 res.result(http::status::ok);
-                res.body() = R"({"message": "Bill updated successfully!"})";
+                res.body() = R"({"auth": "true","permission": "true","message": "Bill updated successfully!"})";
+                res.prepare_payload();
+                return;
             } else {
                 res.result(http::status::bad_request);
-                res.body() = R"({"error": "Failed to update bill"})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to update bill"})";
+                res.prepare_payload();
+                return;
             }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
             res.prepare_payload();
+            return;
         }
     }
 
     // DELETE a bill by UUID
     static void delete_data(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res,
         const std::unordered_map<std::string, std::string>& query_params
     ) {
         if (req.method() == http::verb::delete_) {
-            std::cout << "http::verb::delete Bill called" << std::endl;
+            logger("BillHttp::delete", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
             auto uuid = query_params.find("uuid");
             if (uuid != query_params.end()) {
                 std::string bill_unique = uuid->second;
                 if (BillController::deleteBill(handle, bill_unique)) {
                     res.result(http::status::ok);
-                    res.body() = R"({"message": "Bill deleted successfully!"})";
+                    res.body() = R"({"auth": "true","permission": "true","message": "Bill deleted successfully!"})";
+                    res.prepare_payload();
+                    return;
                 } else {
                     res.result(http::status::bad_request);
-                    res.body() = R"({"error": "Failed to delete bill"})";
+                    res.body() = R"({"auth": "true","permission": "true","error": "Failed to delete bill"})";
+                    res.prepare_payload();
+                    return;
                 }
-                res.prepare_payload();
             } else {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "UUID parameter is missing."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "UUID parameter is missing."})";
                 res.prepare_payload();
+                return;
             }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
         }
     }
 };

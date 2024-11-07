@@ -3,7 +3,12 @@
 #include "core/server.hxx"
 #include <boost/json.hpp>
 #include <boost/shared_ptr.hpp>
+
 #include "core/sms.hxx"
+#include "core/safe_json.hxx"
+#include "core/helpers.hxx"
+#include "core/session.hxx"
+#include "core/session_macro.hxx"
 
 #include "controllers/paymentController.hxx"
 #include "controllers/customerController.hxx"
@@ -44,39 +49,74 @@ public:
 
     // HTTP GET request handler for fetching payments
     static void get(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::get) {
-            std::cout << "http::verb::get called" << std::endl;
+            logger("PaymentHttp::get", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
 
             // Fetch all payments from the controller
             auto payments = PaymentController::getAllPayments(handle);
-            auto payments_json = payments_to_json(payments);
-            std::string jsonString = boost::json::serialize(payments_json);
+            response_json["payment_data"] = payments_to_json(payments);
+            std::string jsonString = boost::json::serialize(response_json);
 
             // Set the response content type and payload
             res.set(http::field::content_type, "application/json");
             res.body() = jsonString;
             res.prepare_payload();
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
         }
     }
 
     static void payBill(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     )
     {
         if(req.method() == http::verb::post){
-            std::cout << "http::verb::post payBill called" <<endl;
+            logger("PaymentHttp::post", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Invalid JSON format. Expected an object."})";
                 res.prepare_payload();
                 return;
             }
@@ -95,14 +135,13 @@ public:
             std::string pay_type = "Bill";
             std::string pay_amount = safe_get_value<std::string>(jsonBody, "pay_amount", "0");
             
-            std::cout << "pay_bill : " <<pay_bill << endl;
 
             auto customer_d = CustomerController::getCustomerByUiid(handle, pay_customer);
             
             if(!customer_d){ // this should not happen
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Failed to get customer data"})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to get customer data"})";
                 res.prepare_payload();
                 return;
             }
@@ -113,7 +152,7 @@ public:
                 std::cout << "Here 3" << endl;
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Failed to get bills data"})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to get bills data"})";
                 res.prepare_payload();
                 return;
             }
@@ -147,17 +186,17 @@ public:
 
                 res.version(req.version());
                 res.result(beast::http::status::ok);
-                res.body() = R"({"message": "Payment accepted successfully!"})";
+                res.body() = R"({"auth": "true","permission": "true","message": "Payment accepted successfully!"})";
             }else{              
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Failed to do payment"})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to do payment"})";
             }
             res.prepare_payload();
         }else{
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
-            res.body() = R"({"error": "Bad Request."})";
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
             res.prepare_payload();
             return;
         }
@@ -165,30 +204,48 @@ public:
 
      // DELETE a bill by UUID
     static void delete_data(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res,
         const std::unordered_map<std::string, std::string>& query_params
     ) {
         if (req.method() == http::verb::delete_) {
-            std::cout << "http::verb::delete Payment called" << std::endl;
+            logger("PaymentHttp::delete", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
             auto uuid = query_params.find("uuid");
             if (uuid != query_params.end()) {
                 std::string pay_unique = uuid->second;
                 if (PaymentController::deletePayment(handle, pay_unique)) {
                     res.result(http::status::ok);
-                    res.body() = R"({"message": "Payment deleted successfully!"})";
+                    res.body() = R"({"auth": "true","permission": "true","message": "Payment deleted successfully!"})";
                 } else {
                     res.result(http::status::bad_request);
-                    res.body() = R"({"error": "Failed to delete payment"})";
+                    res.body() = R"({"auth": "true","permission": "true","error": "Failed to delete payment"})";
                 }
                 res.prepare_payload();
             } else {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "UUID parameter is missing."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "UUID parameter is missing."})";
                 res.prepare_payload();
             }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
         }
     }
 };

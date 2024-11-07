@@ -113,158 +113,154 @@ int main(int argc, char* argv[]) {
             auto id = query_params.find("id");
             
             if(uuid != query_params.end()){
-                // CustomerHttp::get_uiid_full_data(req,res,query_params);
+                CustomerHttp::get_uiid_full_data(req,res,query_params);
             }else if(id != query_params.end()){
-                // CustomerHttp::getCustomerById(req,res,query_params);
+                CustomerHttp::getCustomerById(req,res,query_params);
             }
             else{
                 CustomerHttp::get(req,res);
             }
         }
 
-        // if(req.method() == http::verb::post){
-        //     CustomerHttp::post(req,res);
-        // }
+        if(req.method() == http::verb::post){
+            CustomerHttp::post(req,res);
+        }
         
-        // if(req.method() == http::verb::put){
-        //     CustomerHttp::put(req,res);
-        // }
+        if(req.method() == http::verb::put){
+            CustomerHttp::put(req,res);
+        }
 
-        // if(req.method() == http::verb::delete_){
-        //     CustomerHttp::delete_data(req,res,query_params);
-        // }
+        if(req.method() == http::verb::delete_){
+            CustomerHttp::delete_data(req,res,query_params);
+        }
     });
 
-   
+    register_route("/api/v1/meter", [](const http::request<http::string_body>& req, http::response<http::string_body>& res, 
+                                                    const std::unordered_map<std::string, std::string>& query_params
+                                                    ) {
 
-    
+        if (req.method() == http::verb::get){
+            auto uuid = query_params.find("uuid");
+            auto customer = query_params.find("customer");
+            auto query = query_params.find("query");
+            if( query != query_params.end()){
+                MeterHttp::queryMeter(req,res,query_params);
+            }
+            else if(uuid != query_params.end()){
+                MeterHttp::getByUuid(req,res,query_params);
+            }
+            else if(customer != query_params.end()){
+                MeterHttp::getByCustomerUuid(req,res,query_params);
+            }
+            else{
+                MeterHttp::get(req,res);
+            }
+        }
 
-    // register_route("/api/v1/meter", [&handle](const http::request<http::string_body>& req, http::response<http::string_body>& res, 
-    //                                                 const std::unordered_map<std::string, std::string>& query_params,
-    //                                                 const std::string& session_id) {
-
-    //     if (req.method() == http::verb::get){
-    //         auto uuid = query_params.find("uuid");
-    //         auto customer = query_params.find("customer");
-    //         auto query = query_params.find("query");
-    //         if( query != query_params.end()){
-    //             MeterHttp::queryMeter(handle,req,res,query_params);
-    //         }
-    //         else if(uuid != query_params.end()){
-    //             MeterHttp::getByUuid(handle,req,res,query_params);
-    //         }
-    //         else if(customer != query_params.end()){
-    //             MeterHttp::getByCustomerUuid(handle,req,res,query_params);
-    //         }
-    //         else{
-    //             MeterHttp::get(handle,req,res);
-    //         }
-    //     }
-
-    //     if(req.method() == http::verb::post){
-    //         MeterHttp::post(handle,req,res);
-    //     }
+        if(req.method() == http::verb::post){
+            MeterHttp::post(req,res);
+        }
         
-    //     if(req.method() == http::verb::put){
-    //         MeterHttp::put(handle,req,res);
-    //     }
+        if(req.method() == http::verb::put){
+            MeterHttp::put(req,res);
+        }
 
-    //     if(req.method() == http::verb::delete_){
-    //         MeterHttp::delete_data(handle,req,res,query_params);
-    //     }
+        if(req.method() == http::verb::delete_){
+            MeterHttp::delete_data(req,res,query_params);
+        }
         
-    // });
+    });
 
-    // register_route("/api/v1/customer", [&handle](const http::request<http::string_body>& req, 
-    //                                     http::response<http::string_body>& res, 
-    //                                     const std::unordered_map<std::string, std::string>& query_params,
-    //                                     const std::string& session_id) {
-    //     if (req.method() == http::verb::get){
-    //         auto uuid = query_params.find("uuid");
-    //         auto report = query_params.find("report");
+    register_route("/api/v1/customer", [](const http::request<http::string_body>& req, 
+                                        http::response<http::string_body>& res, 
+                                        const std::unordered_map<std::string, std::string>& query_params
+                                        ) {
+        if (req.method() == http::verb::get){
+            auto uuid = query_params.find("uuid");
+            auto report = query_params.find("report");
 
-    //         if(uuid != query_params.end()){
-    //             CustomerHttp::get_uiid_full_data(handle,req,res,query_params);
-    //         }
-    //         else if(report != query_params.end()){
-    //             CustomerHttp::getCustomerReport(handle,req,res,query_params);
-    //         }
-    //         else{
-    //             CustomerHttp::get(handle,req,res);
-    //         }
-    //     }
+            if(uuid != query_params.end()){
+                CustomerHttp::get_uiid_full_data(req,res,query_params);
+            }
+            else if(report != query_params.end()){
+                CustomerHttp::getCustomerReport(req,res,query_params);
+            }
+            else{
+                CustomerHttp::get(req,res);
+            }
+        }
 
-    //     if(req.method() == http::verb::post){
+        if(req.method() == http::verb::post){
 
-    //         auto meter = query_params.find("meter");
-    //         if(meter != query_params.end()){
-    //             CustomerHttp::searchCustomerMeter(handle,req,res);
-    //         }else{
-    //             CustomerHttp::post(handle,req,res);
-    //         }
-    //     }
+            auto meter = query_params.find("meter");
+            if(meter != query_params.end()){
+                CustomerHttp::searchCustomerMeter(req,res);
+            }else{
+                CustomerHttp::post(req,res);
+            }
+        }
 
-    //     if(req.method() == http::verb::put){
-    //          CustomerHttp::put(handle,req,res);
-    //     }
+        if(req.method() == http::verb::put){
+             CustomerHttp::put(req,res);
+        }
 
-    //     if(req.method() == http::verb::delete_){
-    //         CustomerHttp::delete_data(handle,req,res,query_params);
-    //     }
-    // });
+        if(req.method() == http::verb::delete_){
+            CustomerHttp::delete_data(req,res,query_params);
+        }
+    });
 
-    // register_route("/api/v1/meter-read", [&handle](const http::request<http::string_body>& req, 
-    //                                     http::response<http::string_body>& res, 
-    //                                     const std::unordered_map<std::string, std::string>& query_params,
-    //                                     const std::string& session_id) {
-    //     if (req.method() == http::verb::get){
-    //         auto uuid = query_params.find("uuid");
-    //         if(uuid != query_params.end()){
-    //             CustomerHttp::get_uiid_full_data(handle,req,res,query_params);
-    //         }
-    //         else{
-    //             MeterReadHttp::seachCustomerInformation(handle,req,res,query_params);
-    //         }
-    //     }
-    // });
+    register_route("/api/v1/meter-read", [](const http::request<http::string_body>& req, 
+                                        http::response<http::string_body>& res, 
+                                        const std::unordered_map<std::string, std::string>& query_params
+                                        ) {
+        if (req.method() == http::verb::get){
+            auto uuid = query_params.find("uuid");
+            if(uuid != query_params.end()){
+                CustomerHttp::get_uiid_full_data(req,res,query_params);
+            }
+            else{
+                MeterReadHttp::seachCustomerInformation(req,res,query_params);
+            }
+        }
+    });
 
-    // register_route("/api/v1/bill", [&handle](const http::request<http::string_body>& req, 
-    //                                     http::response<http::string_body>& res, 
-    //                                     const std::unordered_map<std::string, std::string>& query_params,
-    //                                     const std::string& session_id) {
-    //     if (req.method() == http::verb::get){
-    //         auto uuid = query_params.find("uuid");
-    //         if(uuid != query_params.end()){
-    //             BillHttp::getByUuid(handle,req,res,query_params);
-    //         }
-    //         else{
-    //             BillHttp::get(handle,req,res);
-    //         }
-    //     }
+    register_route("/api/v1/bill", [](const http::request<http::string_body>& req, 
+                                        http::response<http::string_body>& res, 
+                                        const std::unordered_map<std::string, std::string>& query_params
+                                        ) {
+        if (req.method() == http::verb::get){
+            auto uuid = query_params.find("uuid");
+            if(uuid != query_params.end()){
+                BillHttp::getByUuid(req,res,query_params);
+            }
+            else{
+                BillHttp::get(req,res);
+            }
+        }
 
-    //     if(req.method() == http::verb::post){
-    //         BillHttp::post(handle,req,res);
-    //     }
+        if(req.method() == http::verb::post){
+            BillHttp::post(req,res);
+        }
 
 
-    //     if(req.method() == http::verb::delete_){
-    //         BillHttp::delete_data(handle,req,res,query_params);
-    //     }
+        if(req.method() == http::verb::delete_){
+            BillHttp::delete_data(req,res,query_params);
+        }
 
-    // });
+    });
 
-    // register_route("/api/v1/payment", [&handle](const http::request<http::string_body>& req, 
-    //                                     http::response<http::string_body>& res, 
-    //                                     const std::unordered_map<std::string, std::string>& query_params,
-    //                                     const std::string& session_id) {
-    //     if(req.method() == http::verb::post){
-    //         PaymentHttp::payBill(handle,req,res);
-    //     }
+    register_route("/api/v1/payment", [](const http::request<http::string_body>& req, 
+                                        http::response<http::string_body>& res, 
+                                        const std::unordered_map<std::string, std::string>& query_params
+                                        ) {
+        if(req.method() == http::verb::post){
+            PaymentHttp::payBill(req,res);
+        }
 
-    //     if(req.method() == http::verb::delete_){
-    //         PaymentHttp::delete_data(handle,req,res,query_params);
-    //     }
-    // });
+        if(req.method() == http::verb::delete_){
+            PaymentHttp::delete_data(req,res,query_params);
+        }
+    });
 
     register_route("/api/v1/employee", [](const http::request<http::string_body>& req, 
                                         http::response<http::string_body>& res, 

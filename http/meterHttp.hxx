@@ -1,7 +1,12 @@
 #pragma once
 #include "core/database.hxx"
 #include "core/server.hxx"
-#include <boost/json.hpp>
+#include "core/sms.hxx"
+#include "core/safe_json.hxx"
+#include "core/helpers.hxx"
+#include "core/session.hxx"
+#include "core/session_macro.hxx"
+
 #include "controllers/meterController.hxx"
 #include "controllers/customerController.hxx"
 
@@ -9,6 +14,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/json.hpp>
 
 class MeterHttp {
 public:
@@ -83,16 +89,32 @@ public:
 
     // GET all meters
     static void get(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::get) {
-            std::cout << "http::verb::get called" << std::endl;
+            logger("MeterHttp::get", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
 
             auto meters = MeterController::getAllMeter(handle);
-            auto meters_json = meters_to_json(meters);
-            std::string jsonString = boost::json::serialize(meters_json);
+            response_json["meter_data"] = meters_to_json(meters);
+            std::string jsonString = boost::json::serialize(response_json);
 
             res.set(http::field::content_type, "application/json");
             res.body() = jsonString;
@@ -101,13 +123,30 @@ public:
     }
 
     static void queryMeter(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res,
         const std::unordered_map<std::string, std::string>& query_params
     ){
         if (req.method() == http::verb::get) {
-            std::cout << "http::verb::get called" << std::endl;
+            logger("MeterHttp::queryMeter", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
+
             auto query = query_params.find("query");
             if( query != query_params.end()){
                 std::string status = query->second;
@@ -116,28 +155,29 @@ public:
 
                 if(status != "all"){
                     auto meters = MeterController::getMetersByStatus(handle,status);
-                    auto meters_json = meters_to_json(meters);
-                    std::string jsonString = boost::json::serialize(meters_json);
+                    response_json["meter_data"] = meters_to_json(meters);
+                    std::string jsonString = boost::json::serialize(response_json);
 
                     res.set(http::field::content_type, "application/json");
                     res.body() = jsonString;
                     res.prepare_payload();
+                    return;
                 }else{
-                    get(handle,req,res);
+                    get(req,res); // doble check
                 }
 
             }
             else{
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Bad Request."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Bad Request."})";
                 res.prepare_payload();
                 return;
             }
         }else{
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
-            res.body() = R"({"error": "Bad Request."})";
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
             res.prepare_payload();
             return;
         }
@@ -145,44 +185,84 @@ public:
 
     // GET meter by UUID
     static void getByUuid(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res,
         const std::unordered_map<std::string, std::string>& query_params
     ) {
         if (req.method() == http::verb::get) {
+            logger("MeterHttp::getByUuid", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
+
             auto uuid = query_params.find("uuid");
             if (uuid != query_params.end()) {
                 std::string meter_unique = uuid->second;
                 auto meter_d = MeterController::getMeterByUiid(handle, meter_unique);
                 if (meter_d) {
-                    boost::json::object response_json;
-                    boost::json::object meter_json = meter_to_json(meter_d);
-                    response_json["meter_data"] = meter_json;
+                    
+                    response_json["meter_data"] = meter_to_json(meter_d);
                     std::string jsonString = boost::json::serialize(response_json);
                     res.set(http::field::content_type, "application/json");
                     res.body() = jsonString;
+                    res.prepare_payload();
+                    return;
                 } else {
                     res.result(http::status::not_found);
-                    res.body() = R"({"error": "Meter not found"})";
+                    res.body() = R"({"auth": "true","permission": "true","error": "Meter not found"})";
+                    res.prepare_payload();
+                    return;
                 }
-                res.prepare_payload();
+                
             } else {
                 res.result(http::status::bad_request);
-                res.body() = R"({"error": "UUID parameter is missing."})";
+                res.body() = R"({"auth": "false","permission": "false","error": "UUID parameter is missing."})";
                 res.prepare_payload();
+                return;
             }
         }
     }
 
     // GET meter by Customer UUID
     static void getByCustomerUuid(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res,
         const std::unordered_map<std::string, std::string>& query_params
     ) {
         if (req.method() == http::verb::get) {
+            logger("MeterHttp::getByCustomerUuid", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
+
             auto customer = query_params.find("customer");
             if (customer != query_params.end()) {
                 std::string customer_unique = customer->second;
@@ -197,8 +277,8 @@ public:
                 } 
                 // Now get all meters by customer Id
                 auto meters_v = MeterController::searchMeterByCustomerUiid(handle, customer_d);
-                auto meters_json = meters_to_json(meters_v);
-                std::string jsonString = boost::json::serialize(meters_json);
+                response_json["meter_data"] = meters_to_json(meters_v);
+                std::string jsonString = boost::json::serialize(response_json);
 
                 res.set(http::field::content_type, "application/json");
                 res.body() = jsonString;
@@ -206,27 +286,45 @@ public:
                 return;
             } else {
                 res.result(http::status::bad_request);
-                res.body() = R"({"error": "UUID parameter is missing."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "UUID parameter is missing."})";
                 res.prepare_payload();
                 return;
             }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
         }
     }
 
     // POST to create a new meter
     static void post(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::post) {
-            std::cout << "http::verb::post Meter called" << std::endl;
+            logger("MeterHttp::post", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Invalid JSON format. Expected an object."})";
                 res.prepare_payload();
                 return;
             }
@@ -249,7 +347,7 @@ public:
             if(!customer_d){ // this should not happen
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Failed to get customer data"})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to get customer data"})";
                 res.prepare_payload();
                 return;
             }
@@ -268,71 +366,124 @@ public:
 
             if (MeterController::createMeter(handle, meter_d)) {
                 res.result(http::status::ok);
-                res.body() = R"({"message": "Meter created successfully!"})";
+                res.body() = R"({"auth": "true","permission": "true","message": "Meter created successfully!"})";
+                res.prepare_payload();
+                return;
             } else {
                 res.result(http::status::bad_request);
-                res.body() = R"({"error": "Failed to create meter"})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to create meter"})";
+                res.prepare_payload();
+                return;
             }
+            
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
             res.prepare_payload();
+            return;
         }
     }
 
     // PUT to update an existing meter
     static void put(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::put) {
-            std::cout << "http::verb::put Meter called" << std::endl;
+            logger("MeterHttp::put", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Invalid JSON format. Expected an object."})";
                 res.prepare_payload();
                 return;
             }
 
             if (MeterController::updateMeter(handle, parsedValue)) {
                 res.result(http::status::ok);
-                res.body() = R"({"message": "Meter updated successfully!"})";
+                res.body() = R"({"auth": "true","permission": "true","message": "Meter updated successfully!"})";
+                res.prepare_payload();
+                return;
             } else {
-                std::cout << "Failed 3" << endl;
                 res.result(http::status::bad_request);
-                res.body() = R"({"error": "Failed to update meter"})";
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to update meter"})";
+                res.prepare_payload();
+                return;
             }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
             res.prepare_payload();
+            return;
         }
     }
 
     // DELETE a meter by UUID
     static void delete_data(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res,
         const std::unordered_map<std::string, std::string>& query_params
     ) {
         if (req.method() == http::verb::delete_) {
-            std::cout << "http::verb::delete Meter called" << std::endl;
+            logger("MeterHttp::delete", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
             auto uuid = query_params.find("uuid");
             if (uuid != query_params.end()) {
                 std::string meter_unique = uuid->second;
                 if (MeterController::deleteMeter(handle, meter_unique)) {
                     res.result(http::status::ok);
-                    res.body() = R"({"message": "Meter deleted successfully!"})";
+                    res.body() = R"({"auth": "true","permission": "true","message": "Meter deleted successfully!"})";
+                    res.prepare_payload();
+                    return;
                 } else {
                     res.result(http::status::bad_request);
-                    res.body() = R"({"error": "Failed to delete meter"})";
+                    res.body() = R"({"auth": "true","permission": "true","error": "Failed to delete meter"})";
+                    res.prepare_payload();
+                    return;
                 }
-                res.prepare_payload();
+               
             } else {
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
-                res.body() = R"({"error": "UUID parameter is missing."})";
+                res.body() = R"({"auth": "true","permission": "true","error": "UUID parameter is missing."})";
                 res.prepare_payload();
+                return;
             }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
         }
     }
 

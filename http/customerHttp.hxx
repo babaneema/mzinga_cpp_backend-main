@@ -78,11 +78,16 @@ public:
             res.body() = jsonString;
             res.prepare_payload();
             return;
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
         }
     }
 
     static void get_uiid_full_data(
-        std::shared_ptr<odb::mysql::database>  & handle,
         const http::request<http::string_body>& req, 
         http::response<http::string_body>& res, 
         const std::unordered_map<std::string, std::string>& query_params
@@ -90,7 +95,24 @@ public:
     {
         auto uuid = query_params.find("uuid");
         if (uuid != query_params.end()) {
+            logger("CustomerHttp::get_uiid_full_data", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+            
             boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
 
             // Get first customer data
             std::string customer_uui = uuid->second;
@@ -118,267 +140,374 @@ public:
             res.set(http::field::content_type, "application/json");
             res.body() = jsonString;
             res.prepare_payload();
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
         }
 
     }
 
-    // static void getCustomerById(
-    //     std::shared_ptr<odb::mysql::database>  & handle,
-    //     const http::request<http::string_body>& req, 
-    //     http::response<http::string_body>& res, 
-    //     const std::unordered_map<std::string, std::string>& query_params
-    //     )
-    // {
-    //     auto id = query_params.find("id");
-    //     if (id != query_params.end()) {
-    //         std::cout<< "Called  void getCustomerById" <<endl;
-    //         boost::json::object response_json;
+    static void getCustomerById(
+        const http::request<http::string_body>& req, 
+        http::response<http::string_body>& res, 
+        const std::unordered_map<std::string, std::string>& query_params
+        )
+    {
+        auto id = query_params.find("id");
+        if (id != query_params.end()) {
+            logger("CustomerHttp::getCustomerById", "Called");
 
-    //         // Get first customer data
-    //         std::string customer_id = id->second;
-    //         std::cout<< "Called  customer_id " << customer_id <<endl;
-    //         int customer_id_int = std::stoi(customer_id);
-    //         std::cout << "Called  customer_id_int " << customer_id_int <<endl;
-    //         auto customer = CustomerController::getCustomerById(handle, customer_id_int);
-    //         auto custommer_json = customer_to_json(customer);
-    //         response_json["customer_data"] = custommer_json;
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
+
+            // Get first customer data
+            std::string customer_id = id->second;
+            int customer_id_int = std::stoi(customer_id);
+            auto customer = CustomerController::getCustomerById(handle, customer_id_int);
+            auto custommer_json = customer_to_json(customer);
+            response_json["customer_data"] = custommer_json;
 
 
-    //         std::string jsonString = boost::json::serialize(response_json);
+            std::string jsonString = boost::json::serialize(response_json);
 
-    //         res.set(http::field::content_type, "application/json");
-    //         res.body() = jsonString;
-    //         res.prepare_payload();
-    //     }else{
-    //         res.result(http::status::bad_request);
-    //         res.set(http::field::content_type, "application/json");
-    //         res.body() = R"({"error": "Bad Request."})";
-    //         res.prepare_payload();
-    //         return;
-    //     }
+            res.set(http::field::content_type, "application/json");
+            res.body() = jsonString;
+            res.prepare_payload();
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
 
-    // }
+    }
     
     // Get Customer Report 
-    // static void getCustomerReport(
-    //     std::shared_ptr<odb::mysql::database>  & handle,
-    //     const http::request<http::string_body>& req, 
-    //     http::response<http::string_body>& res, 
-    //     const std::unordered_map<std::string, std::string>& query_params
-    //     )
-    // {
-    //     auto report = query_params.find("report");
-    //     if(report != query_params.end()){
-    //         std::cout<< "Called  void getCustomerReport" <<endl;
+    static void getCustomerReport(
+        const http::request<http::string_body>& req, 
+        http::response<http::string_body>& res, 
+        const std::unordered_map<std::string, std::string>& query_params
+        )
+    {
+        auto report = query_params.find("report");
+        if(report != query_params.end()){
+            logger("CustomerHttp::getCustomerReport", "Called");
 
-    //         auto start_date = query_params.find("start_date");
-    //         auto end_date = query_params.find("end_date");
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
 
-    //         std::string start_ =  start_date->second;
-    //         std::string end_ =  end_date->second;
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            auto start_date = query_params.find("start_date");
+            auto end_date = query_params.find("end_date");
+
+            std::string start_ =  start_date->second;
+            std::string end_ =  end_date->second;
 
 
-    //         boost::json::object response_json;
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
 
-    //         auto customers_data = CustomerController::GetCustomerReport(handle, start_, end_);
-    //         auto customers_json = customers_to_json(customers_data);
-    //         response_json["customers_data"] = customers_json;
+            auto customers_data = CustomerController::GetCustomerReport(handle, start_, end_);
+            auto customers_json = customers_to_json(customers_data);
+            response_json["customers_data"] = customers_json;
 
-    //         std::string jsonString = boost::json::serialize(response_json);
+            std::string jsonString = boost::json::serialize(response_json);
 
-    //         res.set(http::field::content_type, "application/json");
-    //         res.body() = jsonString;
-    //         res.prepare_payload();
-    //     }
+            res.set(http::field::content_type, "application/json");
+            res.body() = jsonString;
+            res.prepare_payload();
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
 
-    // }
+    }
 
     // Handle POST request to create a customer
-    // static void post(
-    //     std::shared_ptr<odb::mysql::database>& handle,
-    //     const http::request<http::string_body>& req,
-    //     http::response<http::string_body>& res
-    // ) {
-    //     if (req.method() == http::verb::post) {
-    //         std::cout << "http::verb::post Customer called" << std::endl;
-    //         boost::json::value parsedValue = boost::json::parse(req.body());
+    static void post(
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res
+    ) {
+        if (req.method() == http::verb::post) {
+            logger("CustomerHttp::post", "Called");
 
-    //         if (!parsedValue.is_object()) {
-    //             res.result(http::status::bad_request);
-    //             res.set(http::field::content_type, "application/json");
-    //             res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
-    //             res.prepare_payload();
-    //             return;
-    //         }
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
 
-    //         boost::uuids::uuid uuid = boost::uuids::random_generator()();
-    //         std::string customer_unique = boost::uuids::to_string(uuid);
-    //         std::string customer_reg_date = getCurrentDate();
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+            boost::json::value parsedValue = boost::json::parse(req.body());
 
-    //         const boost::json::object& jsonBody = parsedValue.as_object();
+            if (!parsedValue.is_object()) {
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "true","error": "Invalid JSON format. Expected an object."})";
+                res.prepare_payload();
+                return;
+            }
 
-    //         std::string customer_branch = safe_get_value<std::string>(jsonBody, "customer_branch", "Customer Branch");
-    //         std::string customer_name = safe_get_value<std::string>(jsonBody, "customer_name", "Customer Name");
-    //         std::string customer_gender = safe_get_value<std::string>(jsonBody, "customer_gender", "Customer Gender");
-    //         std::string customer_contact = safe_get_value<std::string>(jsonBody, "customer_contact", "Customer Contact");
-    //         std::string customer_address = safe_get_value<std::string>(jsonBody, "customer_address", "Customer Address");
-    //         std::string customer_house_number = safe_get_value<std::string>(jsonBody, "customer_house_number", "Customer House Number");
+            boost::uuids::uuid uuid = boost::uuids::random_generator()();
+            std::string customer_unique = boost::uuids::to_string(uuid);
+            std::string customer_reg_date = getCurrentDate();
 
-    //         auto branch_d = BranchController::getBranchByUiid(handle, customer_branch);
-    //         if(!branch_d){ // this should not happen
-    //             res.result(http::status::bad_request);
-    //             res.set(http::field::content_type, "application/json");
-    //             res.body() = R"({"error": "Failed to get branch customer"})";
-    //             res.prepare_payload();
-    //             return;
-    //         }
+            const boost::json::object& jsonBody = parsedValue.as_object();
 
-    //         // Create customer object
-    //         boost::shared_ptr<customer> customer_d = boost::make_shared<customer>(
-    //             customer_unique, 
-    //             branch_d,
-    //             customer_name, 
-    //             customer_gender, 
-    //             customer_contact, 
-    //             customer_address, 
-    //             customer_house_number, 
-    //             customer_reg_date
-    //         );
+            std::string customer_branch = safe_get_value<std::string>(jsonBody, "customer_branch", "Customer Branch");
+            std::string customer_name = safe_get_value<std::string>(jsonBody, "customer_name", "Customer Name");
+            std::string customer_gender = safe_get_value<std::string>(jsonBody, "customer_gender", "Customer Gender");
+            std::string customer_contact = safe_get_value<std::string>(jsonBody, "customer_contact", "Customer Contact");
+            std::string customer_address = safe_get_value<std::string>(jsonBody, "customer_address", "Customer Address");
+            std::string customer_house_number = safe_get_value<std::string>(jsonBody, "customer_house_number", "Customer House Number");
 
-    //         if (CustomerController::createCustomer(handle, customer_d)) {
-    //             res.version(req.version());
-    //             res.result(beast::http::status::ok);
-    //             res.body() = R"({"message": "Customer created successfully!"})";
-    //         } else {                
-    //             res.result(http::status::bad_request);
-    //             res.set(http::field::content_type, "application/json");
-    //             res.body() = R"({"error": "Failed to create customer"})";
-    //         }
-    //         res.prepare_payload();
-    //     }
-    // }
+            auto branch_d = BranchController::getBranchByUiid(handle, customer_branch);
+            if(!branch_d){ // this should not happen
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to get branch customer"})";
+                res.prepare_payload();
+                return;
+            }
 
-    // static void put(
-    //     std::shared_ptr<odb::mysql::database>& handle,
-    //     const http::request<http::string_body>& req,
-    //     http::response<http::string_body>& res
-    // ) {
-    //     if (req.method() == http::verb::put) {
-    //         std::cout << "http::verb::put Customer called" << std::endl;
-    //         boost::json::value parsedValue = boost::json::parse(req.body());
+            // Create customer object
+            boost::shared_ptr<customer> customer_d = boost::make_shared<customer>(
+                customer_unique, 
+                branch_d,
+                customer_name, 
+                customer_gender, 
+                customer_contact, 
+                customer_address, 
+                customer_house_number, 
+                customer_reg_date
+            );
 
-    //         if (!parsedValue.is_object()) {
-    //             res.result(http::status::bad_request);
-    //             res.set(http::field::content_type, "application/json");
-    //             res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
-    //             res.prepare_payload();
-    //             return;
-    //         }
+            if (CustomerController::createCustomer(handle, customer_d)) {
+                res.version(req.version());
+                res.result(beast::http::status::ok);
+                res.body() = R"({"auth": "true","permission": "true","message": "Customer created successfully!"})";
+                res.prepare_payload();
+                return;
+            } else {                
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to create customer"})";
+                res.prepare_payload();
+                return;
+            }
+            
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
+    }
 
-    //         if (CustomerController::updateCustomer(handle, parsedValue)) {
-    //             res.version(req.version());
-    //             res.result(beast::http::status::ok);
-    //             res.body() = R"({"message": "Customer updated successfully!"})";
-    //         } else {                
-    //             res.result(http::status::bad_request);
-    //             res.set(http::field::content_type, "application/json");
-    //             res.body() = R"({"error": "Failed to update customer"})";
-    //         }
-    //         res.prepare_payload();
-    //     }
-    // }
+    static void put(
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res
+    ) {
+        if (req.method() == http::verb::put) {
+            logger("CustomerHttp::put", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+            boost::json::value parsedValue = boost::json::parse(req.body());
+
+            if (!parsedValue.is_object()) {
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "true","error": "Invalid JSON format. Expected an object."})";
+                res.prepare_payload();
+                return;
+            }
+
+            if (CustomerController::updateCustomer(handle, parsedValue)) {
+                res.version(req.version());
+                res.result(beast::http::status::ok);
+                res.body() = R"({"auth": "true","permission": "true","message": "Customer updated successfully!"})";
+            } else {                
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "true","error": "Failed to update customer"})";
+            }
+            res.prepare_payload();
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
+    }
 
     // Handle DELETE request to remove a customer by UUID
-    // static void delete_data(
-    //     std::shared_ptr<odb::mysql::database>& handle,
-    //     const http::request<http::string_body>& req,
-    //     http::response<http::string_body>& res,
-    //     const std::unordered_map<std::string, std::string>& query_params
-    // ) {
-    //     if (req.method() == http::verb::delete_) {
-    //         std::cout << "http::verb::delete Customer called" << std::endl;
-    //         auto uuid = query_params.find("uuid");
-    //         if (uuid != query_params.end()) {
-    //             std::string customer_unique = uuid->second;
-    //             if (CustomerController::deleteCustomer(handle, customer_unique)) {
-    //                 res.version(req.version());
-    //                 res.result(beast::http::status::ok);
-    //                 res.body() = R"({"message": "Customer deleted successfully!"})";
-    //             } else {                
-    //                 res.result(http::status::bad_request);
-    //                 res.set(http::field::content_type, "application/json");
-    //                 res.body() = R"({"error": "Failed to delete customer"})";
-    //             }
-    //             res.prepare_payload();
-    //         } else {
-    //             res.result(http::status::bad_request);
-    //             res.set(http::field::content_type, "application/json");
-    //             res.body() = R"({"error": "Bad Request."})";
-    //             res.prepare_payload();
-    //         }
-    //     }
-    // }
+    static void delete_data(
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res,
+        const std::unordered_map<std::string, std::string>& query_params
+    ) {
+        if (req.method() == http::verb::delete_) {
+            logger("CustomerHttp::delete", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+            auto uuid = query_params.find("uuid");
+            if (uuid != query_params.end()) {
+                std::string customer_unique = uuid->second;
+                if (CustomerController::deleteCustomer(handle, customer_unique)) {
+                    res.version(req.version());
+                    res.result(beast::http::status::ok);
+                    res.body() = R"({"auth": "true","permission": "true","message": "Customer deleted successfully!"})";
+                } else {                
+                    res.result(http::status::bad_request);
+                    res.set(http::field::content_type, "application/json");
+                    res.body() = R"({"auth": "true","permission": "true","error": "Failed to delete customer"})";
+                }
+                res.prepare_payload();
+            } else {
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "true","error": "Bad Request."})";
+                res.prepare_payload();
+            }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
+    }
     
-    // static void searchCustomerMeter(
-    //     std::shared_ptr<odb::mysql::database>& handle,
-    //     const http::request<http::string_body>& req,
-    //     http::response<http::string_body>& res
-    // ){
-    //     if (req.method() == http::verb::post) {
-            
-    //         std::cout << "http::verb::searchCustomerMeter Meter called" << std::endl;
-    //         boost::json::value parsedValue = boost::json::parse(req.body());
+    static void searchCustomerMeter(
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res
+    ){
+        if (req.method() == http::verb::post) {
+            logger("CustomerHttp::delete", "Called");
 
-    //         if (!parsedValue.is_object()) {
-    //             res.result(http::status::bad_request);
-    //             res.set(http::field::content_type, "application/json");
-    //             res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
-    //             res.prepare_payload();
-    //             return;
-    //         }
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+      
+            boost::json::value parsedValue = boost::json::parse(req.body());
 
-    //         boost::json::object response_json;
-    //         const boost::json::object& jsonBody = parsedValue.as_object();
-    //         std::string search_query = safe_get_value<std::string>(jsonBody, "search_query", "uuid");
+            if (!parsedValue.is_object()) {
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "true","error": "Invalid JSON format. Expected an object."})";
+                res.prepare_payload();
+                return;
+            }
 
-    //         // Priotize name, phone number and last meter number
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
+
+            const boost::json::object& jsonBody = parsedValue.as_object();
+            std::string search_query = safe_get_value<std::string>(jsonBody, "search_query", "uuid");
+
+            // Priotize name, phone number and last meter number
            
 
-    //         auto customer_v1 = CustomerController::searchCustomerByName(handle, search_query);
-    //         if(!customer_v1.empty()){
-    //             auto customers_json =  customers_to_json(customer_v1);
-    //             response_json["customers_data"] = customers_json;
-    //             std::string jsonString = boost::json::serialize(response_json);
-    //             res.set(http::field::content_type, "application/json");
-    //             res.body() = jsonString;
-    //             return;
-    //         }
+            auto customer_v1 = CustomerController::searchCustomerByName(handle, search_query);
+            if(!customer_v1.empty()){
+                auto customers_json =  customers_to_json(customer_v1);
+                response_json["customers_data"] = customers_json;
+                std::string jsonString = boost::json::serialize(response_json);
+                res.set(http::field::content_type, "application/json");
+                res.body() = jsonString;
+                return;
+            }
 
-    //         auto customer_v2 = CustomerController::searchCustomerByPhone(handle, search_query);
-    //          if(!customer_v2.empty()){
-    //             auto customers_json = CustomerHttp::customers_to_json(customer_v2);
-    //             response_json["customers_data"] = customers_json;
-    //             std::string jsonString = boost::json::serialize(response_json);
-    //             res.set(http::field::content_type, "application/json");
-    //             res.body() = jsonString;
-    //             return;
-    //         }
+            auto customer_v2 = CustomerController::searchCustomerByPhone(handle, search_query);
+             if(!customer_v2.empty()){
+                auto customers_json = CustomerHttp::customers_to_json(customer_v2);
+                response_json["customers_data"] = customers_json;
+                std::string jsonString = boost::json::serialize(response_json);
+                res.set(http::field::content_type, "application/json");
+                res.body() = jsonString;
+                return;
+            }
 
-    //         auto customer_v3 = MeterController::searchMeterByNumber(handle, search_query);
-    //         if(!customer_v3.empty()){
-    //             auto customers_json = MeterHttp::meters_to_json(customer_v3, true);
-    //             response_json["customers_data"] = customers_json;
-    //             std::string jsonString = boost::json::serialize(response_json);
-    //             res.set(http::field::content_type, "application/json");
-    //             res.body() = jsonString;
-    //             return;
-    //         }
+            auto customer_v3 = MeterController::searchMeterByNumber(handle, search_query);
+            if(!customer_v3.empty()){
+                auto customers_json = MeterHttp::meters_to_json(customer_v3, true);
+                response_json["customers_data"] = customers_json;
+                std::string jsonString = boost::json::serialize(response_json);
+                res.set(http::field::content_type, "application/json");
+                res.body() = jsonString;
+                return;
+            }
             
-    //         res.result(http::status::bad_request);
-    //         res.set(http::field::content_type, "application/json");
-    //         res.body() = R"({"error": "Failed to get customer data"})";
-    //         res.prepare_payload();
-    //         return;
-    //     }
-    // }
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "true","permission": "true","error": "Failed to get customer data"})";
+            res.prepare_payload();
+            return;
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
+    }
 };  

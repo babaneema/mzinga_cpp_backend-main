@@ -1,35 +1,53 @@
 #pragma once
-#include "core/database.hxx"
-#include "core/server.hxx"
-#include <boost/json.hpp>
 #include "controllers/meterController.hxx"
 #include "controllers/customerController.hxx"
+
 #include "http/meterHttp.hxx"
 #include "http/customerHttp.hxx"
+
+#include "core/sms.hxx"
+#include "core/safe_json.hxx"
+#include "core/helpers.hxx"
+#include "core/session.hxx"
+#include "core/session_macro.hxx"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/json.hpp>
 
 
 class MeterReadHttp {
 public:
     // customer name, phone number, meater number.
     static void seachCustomerInformation(
-        std::shared_ptr<odb::mysql::database>& handle,
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res,
         const std::unordered_map<std::string, std::string>& query_params
     ){
         // priority is customer name. 
-        std::cout << "seachCustomerInformation " << std::endl;
+        logger("MeterReadHttp::seachCustomerInformation", "Called");
+
+        boost::shared_ptr<employee> employee_session;
+        CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+        std::string administrative = employee_session->get_employee_administrative();
+
+        // Worker, Manager & Administrator
+        if(administrative == "Worker"){
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
+
         boost::json::value parsedValue = boost::json::parse(req.body());
 
         if (!parsedValue.is_object()) {
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
-            res.body() = R"({"error": "Invalid JSON format. Expected an object."})";
+            res.body() = R"({"auth": "true","permission": "true","error": "Invalid JSON format. Expected an object."})";
             res.prepare_payload();
             return;
         }
@@ -40,12 +58,14 @@ public:
         if(meter_read_query.empty()){
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
-            res.body() = R"({"error": "Empty Query."})";
+            res.body() = R"({"auth": "true","permission": "true","error": "Empty Query."})";
             res.prepare_payload();
             return;
         }
         
         boost::json::object response_json;
+        response_json["auth"] = "true";
+        response_json["permission"] = "true";
 
         // Serch first for customer name
         auto customer_data_by_name = CustomerController::searchCustomerByName(handle, meter_read_query);
