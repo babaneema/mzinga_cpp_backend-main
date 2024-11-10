@@ -40,6 +40,9 @@ public:
                     "bill_customer_unique", bi->get_bill_customer()->get_customer_unique()
                 },
                 {
+                    "bill_customer_contact", bi->get_bill_customer()->get_customer_contact()
+                },
+                {
                     "bill_meter", bi->get_bill_meter()->get_meter_number()
                 },
                 {
@@ -64,6 +67,7 @@ public:
         http::response<http::string_body>& res
     ) {
         if (req.method() == http::verb::get) {
+            std::cout << "BillHttp::get Got Called " <<endl;
             logger("BillHttp::get", "Called");
 
             boost::shared_ptr<employee> employee_session;
@@ -150,6 +154,67 @@ public:
                 res.prepare_payload();
                 return;
             }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
+    }
+
+    static void queryBill(
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res,
+        const std::unordered_map<std::string, std::string>& query_params
+    ){
+        if (req.method() == http::verb::get) {
+            logger("BillHttp::queryBill", "Called");
+            
+             boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+            // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
+
+            auto query = query_params.find("query");
+            if( query != query_params.end()){
+                std::string status = query->second;
+                
+                // we are expecting the queries to be
+                // all, paid, partial, unpaid
+                if(status != "all"){
+                    // auto meters = MeterController::getMetersByStatus(handle,status);
+                    // response_json["meter_data"] = meters_to_json(meters);
+                    // std::string jsonString = boost::json::serialize(response_json);
+
+                    // res.set(http::field::content_type, "application/json");
+                    // res.body() = jsonString;
+                    // res.prepare_payload();
+                    return;
+                }else{
+                    get(req,res); // doble check
+                }
+            }else{
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "true","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+
         }else{
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");

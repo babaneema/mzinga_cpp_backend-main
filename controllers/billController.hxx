@@ -21,21 +21,34 @@ public:
     typedef odb::query<bill> query;
     typedef odb::result<bill> result;
 
-    static auto getAllBills(const std::shared_ptr<odb::mysql::database> & db) {
+
+    static auto getAllBills(const std::shared_ptr<odb::mysql::database> &db, int page = 1, int pageSize = 1000) {
+        std::cout << "Called getAllBills with Pagination: Page " << page << ", Page Size " << pageSize << std::endl;
         std::vector<boost::shared_ptr<bill>> bills;
+        // Calculate offset for pagination
+        int offset = (page - 1) * pageSize;
+        // Start time measurement
+        auto start = std::chrono::high_resolution_clock::now();
         try {
             odb::transaction t(db->begin());
-            odb::result<bill> r(db->query<bill>());
+            // Pagination using LIMIT and OFFSET in ODB query
+            odb::query<bill> query = odb::query<bill>::true_expr + 
+                                    "LIMIT" + odb::query<bill>::_val(pageSize) +
+                                    "OFFSET" + odb::query<bill>::_val(offset);
+            odb::result<bill> r(db->query<bill>(query));
+            bills.reserve(pageSize); // Reserve space for the expected page size
             for (auto i = r.begin(); i != r.end(); ++i) {
                 bills.emplace_back(boost::make_shared<bill>(*i));
             }
             t.commit();
-            return bills;
-
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cerr << "Error fetching bills: " << e.what() << std::endl;
-            return bills;
         }
+        // Stop measuring time
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> duration = end - start;
+        std::cout << "Time taken to fetch bills: " << duration.count() << " seconds" << std::endl;
+        return bills;
     }
 
     static auto getBillsByCustomerId(std::shared_ptr<odb::mysql::database> & db, const int & id) {

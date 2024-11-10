@@ -230,6 +230,10 @@ int main(int argc, char* argv[]) {
                                         ) {
         if (req.method() == http::verb::get){
             auto uuid = query_params.find("uuid");
+            auto query = query_params.find("query");
+            if( query != query_params.end()){
+                BillHttp::queryBill(req,res,query_params);
+            }
             if(uuid != query_params.end()){
                 BillHttp::getByUuid(req,res,query_params);
             }
