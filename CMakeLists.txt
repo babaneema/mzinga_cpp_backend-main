@@ -157,4 +157,5 @@ target_link_libraries(MyProject PRIVATE
     OpenSSL::SSL 
     OpenSSL::Crypto
     CURL::libcurl
+    mysqlclient
 )

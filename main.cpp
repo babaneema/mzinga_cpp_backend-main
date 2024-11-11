@@ -238,7 +238,7 @@ int main(int argc, char* argv[]) {
                 BillHttp::getByUuid(req,res,query_params);
             }
             else{
-                BillHttp::get(req,res);
+                BillHttp::get(req,res,query_params);
             }
         }
 

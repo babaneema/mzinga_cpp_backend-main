@@ -5,6 +5,9 @@ sudo odb --generate-query --generate-schema --std c++14  -d mysql --hxx-prologue
 
 sudo odb --generate-query --generate-schema --std c++14  -d mysql --hxx-prologue '#include <odb/boost/smart-ptr/pointer-traits.hxx>' customer.hxx
 
+sudo odb --std c++14 --database mysql --generate-query --generate-schema bill_payment_view.hxx
+
+
 Add the following tables
 1. Address Table. 
 2. Department table - This needs talking to the owner of system 

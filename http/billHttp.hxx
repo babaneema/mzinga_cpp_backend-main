@@ -64,10 +64,14 @@ public:
     // GET all bills
     static void get(
         const http::request<http::string_body>& req, 
-        http::response<http::string_body>& res
+        http::response<http::string_body>& res,
+        const std::unordered_map<std::string, std::string>& query_params
     ) {
         if (req.method() == http::verb::get) {
             std::cout << "BillHttp::get Got Called " <<endl;
+            auto page = query_params.find("page");
+            auto page_size = query_params.find("pageSize");
+
             logger("BillHttp::get", "Called");
 
             boost::shared_ptr<employee> employee_session;
@@ -195,16 +199,18 @@ public:
                 // we are expecting the queries to be
                 // all, paid, partial, unpaid
                 if(status != "all"){
-                    // auto meters = MeterController::getMetersByStatus(handle,status);
-                    // response_json["meter_data"] = meters_to_json(meters);
-                    // std::string jsonString = boost::json::serialize(response_json);
+                    if(status == "paid"){
+                        std::cout << "status " << status <<std::endl;
+                        response_json["bill_data"] = BillController::getFullyPaidBillIds(handle);
+                        std::string jsonString = boost::json::serialize(response_json);
 
-                    // res.set(http::field::content_type, "application/json");
-                    // res.body() = jsonString;
-                    // res.prepare_payload();
-                    return;
+                        res.set(http::field::content_type, "application/json");
+                        res.body() = jsonString;
+                        res.prepare_payload();
+                        return;
+                    }
                 }else{
-                    get(req,res); // doble check
+                    get(req,res,query_params); // doble check
                 }
             }else{
                 res.result(http::status::bad_request);
