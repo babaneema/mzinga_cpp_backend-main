@@ -91,8 +91,8 @@ public:
             response_json["auth"] = "true";
             response_json["permission"] = "true";
 
-            auto bills = BillController::getAllBills(handle);
-            response_json["bill_data"] = bills_to_json(bills);
+            
+            response_json["bill_data"] = BillController::getAllBills(handle);
             std::string jsonString = boost::json::serialize(response_json);
 
             res.set(http::field::content_type, "application/json");

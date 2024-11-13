@@ -33,14 +33,6 @@ public:
         CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
         std::string administrative = employee_session->get_employee_administrative();
 
-        // Worker, Manager & Administrator
-        if(administrative == "Worker"){
-            res.result(http::status::bad_request);
-            res.set(http::field::content_type, "application/json");
-            res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
-            res.prepare_payload();
-            return;
-        }
 
         boost::json::value parsedValue = boost::json::parse(req.body());
 
@@ -93,7 +85,7 @@ public:
         auto customer_data_by_meter = MeterController::searchMeterByNumber(handle, meter_read_query);
         if(customer_data_by_meter.size()){
             auto customer_meter_json = MeterHttp::meters_to_json(customer_data_by_meter);
-            response_json["customer_meter_data"] = customer_meter_json;
+            response_json["customer_data"] = customer_meter_json;
             std::string jsonString = boost::json::serialize(response_json);
             res.set(http::field::content_type, "application/json");
             res.body() = jsonString;
