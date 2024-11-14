@@ -250,15 +250,6 @@ public:
             CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
             std::string administrative = employee_session->get_employee_administrative();
 
-            // Worker, Manager & Administrator
-            if(administrative == "Worker"){
-                res.result(http::status::bad_request);
-                res.set(http::field::content_type, "application/json");
-                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
-                res.prepare_payload();
-                return;
-            }
-
             boost::json::object response_json;
             response_json["auth"] = "true";
             response_json["permission"] = "true";
@@ -271,7 +262,7 @@ public:
                 if (!customer_d) {
                     res.result(http::status::bad_request);
                     res.set(http::field::content_type, "application/json");
-                    res.body() = R"({"error": "Failed to get customer data"})";
+                    res.body() = R"({"auth": "true","permission": "true","error": "Failed to get customer data"})";
                     res.prepare_payload();
                     return;
                 } 

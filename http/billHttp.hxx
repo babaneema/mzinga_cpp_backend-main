@@ -242,14 +242,6 @@ public:
             CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
             std::string administrative = employee_session->get_employee_administrative();
 
-            // Worker, Manager & Administrator
-            if(administrative == "Worker"){
-                res.result(http::status::bad_request);
-                res.set(http::field::content_type, "application/json");
-                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
-                res.prepare_payload();
-                return;
-            }
             boost::json::value parsedValue = boost::json::parse(req.body());
 
             if (!parsedValue.is_object()) {
@@ -268,8 +260,9 @@ public:
             std::string meter_unique = safe_get_value<std::string>(jsonBody, "meter_unique", "");
             std::string meter_read = safe_get_value<std::string>(jsonBody, "meter_read", "");
 
+            std::cout << "meter_read " << meter_read <<std::endl;
+
             // get meter if it is valid - 1
-            std::cout << "meter_unique " << meter_unique <<endl;
             auto meter_d = MeterController::getMeterByUiid(handle, meter_unique); 
             if(!meter_d){
                 res.result(http::status::bad_request);
@@ -293,6 +286,8 @@ public:
 
             // from last reading get the current on.
             auto unit_u = std::stoi(meter_read) - total_units_used;
+            std::cout <<  "Unit used " << total_units_used <<std::endl;
+            std::cout <<  "unit_u " << unit_u <<std::endl;
 
             if(0 > unit_u){
                 std::cout << "called here 3 " <<endl;
@@ -330,7 +325,7 @@ public:
 
                 std::string phone_number = meter_d->get_meter_customer()->get_customer_contact();
                 
-                sendSingleSms(phone_number, massage);
+                // sendSingleSms(phone_number, massage);
                 std::string sms = "";
                 res.result(http::status::ok);
                 res.body() = R"({"auth": "true","permission": "false","message": "Bill created successfully!"})";
