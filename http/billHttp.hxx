@@ -121,14 +121,6 @@ public:
             CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
             std::string administrative = employee_session->get_employee_administrative();
 
-            // Worker, Manager & Administrator
-            if(administrative == "Worker"){
-                res.result(http::status::bad_request);
-                res.set(http::field::content_type, "application/json");
-                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
-                res.prepare_payload();
-                return;
-            }
 
             boost::json::object response_json;
             response_json["auth"] = "true";
@@ -151,6 +143,57 @@ public:
                     res.prepare_payload();
                     return;
                 }
+                
+            } else {
+                res.result(http::status::bad_request);
+                res.body() = R"({"auth": "true","permission": "true","error": "UUID parameter is missing."})";
+                res.prepare_payload();
+                return;
+            }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
+    }
+
+    // get all bils by customer
+    static void getBillsByMeter(
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res,
+        const std::unordered_map<std::string, std::string>& query_params
+    ) {
+        if (req.method() == http::verb::get) {
+            logger("BillHttp::getBillsByMeter", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
+
+            auto customer = query_params.find("customer");
+            if (customer != query_params.end()) {
+                std::string customer_unique = customer->second;
+                // auto bill_d = BillController::getBillByUuid(handle, bill_unique);
+                // if (bill_d) {
+                //     response_json["bill_data"]  = bill_to_json(bill_d);
+                //     std::string jsonString = boost::json::serialize(response_json);
+                //     res.set(http::field::content_type, "application/json");
+                //     res.body() = jsonString;
+                //     res.prepare_payload();
+                //     return;
+                // } else {
+                //     res.result(http::status::not_found);
+                //     res.body() = R"({"auth": "true","permission": "true","error": "Bill not found"})";
+                //     res.prepare_payload();
+                //     return;
+                // }
                 
             } else {
                 res.result(http::status::bad_request);
@@ -200,7 +243,6 @@ public:
                 // all, paid, partial, unpaid
                 if(status != "all"){
                     if(status == "paid"){
-                        std::cout << "status " << status <<std::endl;
                         response_json["bill_data"] = BillController::getFullyPaidBillIds(handle);
                         std::string jsonString = boost::json::serialize(response_json);
 
@@ -258,9 +300,7 @@ public:
 
             const boost::json::object& jsonBody = parsedValue.as_object();
             std::string meter_unique = safe_get_value<std::string>(jsonBody, "meter_unique", "");
-            std::string meter_read = safe_get_value<std::string>(jsonBody, "meter_read", "");
-
-            std::cout << "meter_read " << meter_read <<std::endl;
+            std::string meter_read = safe_get_value<std::string>(jsonBody, "meter_read","");
 
             // get meter if it is valid - 1
             auto meter_d = MeterController::getMeterByUiid(handle, meter_unique); 
@@ -285,9 +325,8 @@ public:
             auto unit_d = UnitController::getLastUnitByBranch(handle, branch_d);
 
             // from last reading get the current on.
+            total_units_used += std::stoi(meter_d->get_meter_intital_unit());
             auto unit_u = std::stoi(meter_read) - total_units_used;
-            std::cout <<  "Unit used " << total_units_used <<std::endl;
-            std::cout <<  "unit_u " << unit_u <<std::endl;
 
             if(0 > unit_u){
                 std::cout << "called here 3 " <<endl;
@@ -325,7 +364,7 @@ public:
 
                 std::string phone_number = meter_d->get_meter_customer()->get_customer_contact();
                 
-                // sendSingleSms(phone_number, massage);
+                sendSingleSms(phone_number, massage, company_name);
                 std::string sms = "";
                 res.result(http::status::ok);
                 res.body() = R"({"auth": "true","permission": "false","message": "Bill created successfully!"})";

@@ -32,9 +32,21 @@ std::string base64_encode(const std::string& input) {
     return output;
 }
 
-void sendSingleSms(const std::string& number, const std::string& message) {
-    const std::string api_key = "8c941787fcc3d9d4";
-    const std::string secret_key = "MzgwOGQxMzVhZTk2YzIzMjYwYzM2NGU2NGI0M2VlYmE4ZDljYTRkOWIyYTNlZTE1ZmZkNzVjNzc2NDVhYTA0MQ==";
+void sendSingleSms(const std::string& number, const std::string& message, std::string user="mzingamaji") {
+    std::string api_key;
+    std::string secret_key;
+    std::string sender_name;
+
+    if(user=="mzingamaji"){
+        sender_name = "MZINGAMAJI";
+        api_key = "8c941787fcc3d9d4";
+        secret_key = "MzgwOGQxMzVhZTk2YzIzMjYwYzM2NGU2NGI0M2VlYmE4ZDljYTRkOWIyYTNlZTE1ZmZkNzVjNzc2NDVhYTA0MQ==";
+    }else{
+        sender_name = "LOGANWATER";
+        api_key = "4a6e7d595ca45a0a";
+        secret_key = "M2NjNmJjYjhkMWZhOTA4ODc2ZTVjMGUxYzA2MWYwZGI5NjNkZDAzNmIxZTk0NDhjYTUzNTNmZjQzYWFhMjU1Yg==";
+    }
+
 
     json::object namba = {
         {"recipient_id", "1"},
@@ -42,7 +54,7 @@ void sendSingleSms(const std::string& number, const std::string& message) {
     };
 
     json::object postData = {
-        {"source_addr", "MZINGAMAJI"},
+        {"source_addr", sender_name},
         {"encoding", 0},
         {"schedule_time", ""},
         {"message", message},

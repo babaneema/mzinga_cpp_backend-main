@@ -24,6 +24,7 @@ public:
     )
     {
         if(req.method() == http::verb::post){
+            std::cout << "Called " << std::endl;
             logger("AuthHttp::login", "Called");
             auto handle = database::get_connection_by_company("admin");
             boost::json::value parsedValue = boost::json::parse(req.body());
@@ -101,6 +102,7 @@ public:
             res.prepare_payload();
             return;
         }else{
+            std::cout << "Called 1" << std::endl;
             res.result(http::status::bad_request);
             res.set(http::field::content_type, "application/json");
             res.body() = R"({"auth": "false","error": "Bad Request."})";

@@ -28,13 +28,15 @@ int main(int argc, char* argv[]) {
     server::add_allowed_origin("https://backend.mzingamaji.co.tz"); 
     server::add_allowed_origin("https://admin.mzingamaji.co.tz"); 
     server::add_allowed_origin("https://mzingamaji.co.tz"); 
+    server::add_allowed_origin("https://loganimaji.co.tz"); 
 
     database::load_connections();
     // Initialize the database and add persons http://localhost:5173
     // std::shared_ptr<odb::mysql::database>  handle = database::init_db();
 
 
-    // sendSingleSms("255763096136", "Hello. Sunday Jabil");
+    // sendSingleSms("255763096136", "Hello. Sunday Jabil", "test");
+    // return 0;
 
     register_route("/api/v1/auth", [](const http::request<http::string_body>& req, 
                                         http::response<http::string_body>& res, 
@@ -287,7 +289,7 @@ int main(int argc, char* argv[]) {
     });
   
     auto const threads = std::max<int>(1, boost::thread::hardware_concurrency());
-    start_server(threads);
+    start_server(threads,4000);
     
     return 0;
 }

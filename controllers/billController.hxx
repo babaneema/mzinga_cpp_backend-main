@@ -55,6 +55,7 @@ public:
             auto conn = dynamic_cast<odb::mysql::connection*>(db->connection().get());
             if (!conn) {
                 throw std::runtime_error("Failed to get MySQL connection");
+
             }
         
             if (mysql_query(conn->handle(), query.c_str()) != 0) {
@@ -165,6 +166,12 @@ public:
         return  bills_json;
     }
 
+    static void getBillsByMeterId(const std::shared_ptr<odb::mysql::database>& db, std::string meter_id) {
+       
+    
+            
+   
+    }
 
 
     static auto getBillsByCustomerId(std::shared_ptr<odb::mysql::database> & db, const int & id) {
@@ -279,6 +286,7 @@ public:
             for (auto i = r.begin(); i != r.end(); ++i) {
                 try {
                     // Convert bill_unit_used to double and add to total
+
                     total_units_used += std::stod(i->get_bill_unit_used());
                 } catch (const std::invalid_argument& e) {
                     std::cerr << "Invalid bill_unit_used format for bill ID " << i->get_bill_id() << ": " << e.what() << std::endl;

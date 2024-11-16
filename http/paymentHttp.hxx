@@ -182,7 +182,7 @@ public:
                                       " Deni ni : "+formatedValue(total_debt);
 
                 std::string phone_number = customer_d->get_customer_contact();
-                sendSingleSms(phone_number, massage);
+                sendSingleSms(phone_number, massage, company_name);
 
                 res.version(req.version());
                 res.result(beast::http::status::ok);

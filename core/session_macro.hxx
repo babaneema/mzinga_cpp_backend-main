@@ -17,6 +17,7 @@
         return;                                                                                 \
     }                                                                                           \
     auto handle = database::get_connection_by_company(session->company);                        \
+    auto company_name = session->company;                                                       \
     employee_d = EmployeeController::getEmployeeByContact(handle, session->phone);              \
     if (!employee_d) {                                                                          \
         res.result(http::status::bad_request);                                                  \
