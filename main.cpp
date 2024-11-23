@@ -62,7 +62,6 @@ int main(int argc, char* argv[]) {
             else{
                 BranchHttp::get(req,res,query_params);
             }
-            
         }
      
         if(req.method() == http::verb::post){
@@ -275,7 +274,7 @@ int main(int argc, char* argv[]) {
         if (req.method() == http::verb::get){
             auto uuid = query_params.find("uuid");
             if(uuid != query_params.end()){
-                // BillHttp::getByUuid(handle,req,res,query_params);
+                EmployeeHttp::getByUuid(req,res,query_params);
             }
             else{
                 EmployeeHttp::get(req,res);
@@ -289,7 +288,7 @@ int main(int argc, char* argv[]) {
     });
   
     auto const threads = std::max<int>(1, boost::thread::hardware_concurrency());
-    start_server(threads,4000);
+    start_server(threads,8080);
     
     return 0;
 }

@@ -82,6 +82,65 @@ public:
         }
     }
 
+    static void getByUuid(
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res,
+        const std::unordered_map<std::string, std::string>& query_params
+    ) {
+        if (req.method() == http::verb::get) {
+            logger("EmployeeHttp::getByUuid", "Called");
+
+            boost::shared_ptr<employee> employee_session;
+            CHECK_SESSION_AND_GET_EMPLOYEE(req, res, employee_session);
+            std::string administrative = employee_session->get_employee_administrative();
+
+               // Worker, Manager & Administrator
+            if(administrative == "Worker"){
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
+                res.prepare_payload();
+                return;
+            }
+
+
+            boost::json::object response_json;
+            response_json["auth"] = "true";
+            response_json["permission"] = "true";
+
+            auto uuid = query_params.find("uuid");
+            if (uuid != query_params.end()) {
+                std::string employee_unique = uuid->second;
+                auto employee_d = EmployeeController::getEmployeeByUiid(handle, employee_unique);
+                if (employee_d) {
+                    response_json["employee_data"]  = employee_to_json(employee_d);
+                    std::string jsonString = boost::json::serialize(response_json);
+                    res.set(http::field::content_type, "application/json");
+                    res.body() = jsonString;
+                    res.prepare_payload();
+                    return;
+                } else {
+                    res.result(http::status::not_found);
+                    res.body() = R"({"auth": "true","permission": "true","error": "Bill not found"})";
+                    res.prepare_payload();
+                    return;
+                }
+                
+            } else {
+                res.result(http::status::bad_request);
+                res.body() = R"({"auth": "true","permission": "true","error": "UUID parameter is missing."})";
+                res.prepare_payload();
+                return;
+            }
+        }else{
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","permission": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
+    }
+
     static void post(
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res

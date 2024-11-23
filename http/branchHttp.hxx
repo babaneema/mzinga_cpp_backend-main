@@ -51,6 +51,7 @@ public:
         )
     {
         if (req.method() == http::verb::get) {
+            std::cout << "here 1" << std::endl;
             logger("BranchHttp::get", "Called");
             // check for authentication and authorization 
 
@@ -60,13 +61,14 @@ public:
             
             // Worker, Manager & Administrator
             if(administrative == "Worker"){
+                std::cout << "here 2" << std::endl;
                 res.result(http::status::bad_request);
                 res.set(http::field::content_type, "application/json");
                 res.body() = R"({"auth": "true","permission": "false","error": "Bad Request."})";
                 res.prepare_payload();
                 return;
             }
-
+            std::cout << "here 3" << std::endl;
             boost::json::object response_json;
             response_json["auth"] = "true";
             response_json["permission"] = "true";

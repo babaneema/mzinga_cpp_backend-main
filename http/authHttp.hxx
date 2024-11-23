@@ -44,6 +44,7 @@ public:
 
             auto user =  UserController::getUserByPhone(handle,phone);
             if(!user){
+                std::cout << " that very bad actual " << std::endl;
                 res.result(http::status::not_found);
                 res.set(http::field::content_type, "application/json");
                 res.body() = R"({"auth": "false","error": "Wrong credintial / User not found"})";
@@ -63,12 +64,29 @@ public:
             if(auto uuid = ServerSession::check_session_in_request(req)){
                 res.version(req.version());
                 res.result(beast::http::status::ok);
-                res.body() = R"({"auth": "true","data": "Authenticated"})";
+                res.body() = R"({"auth": "true", "permission": "true","data": "Authenticated"})";
                 res.prepare_payload();
                 return;
             }
 
             std::string s_uuid =  ServerSession::set_session_in_response(res, phone, user->get_company());
+            // std::string set_cookie = "uuid=" + s_uuid + "; Path=/; SameSite=None; Secure";
+            std::string set_cookie = "uuid=" + s_uuid + 
+                        "; Domain=majibackend.sisoya.co.tz" +  // Add the common parent domain
+                        "; Path=/" + 
+                        "; SameSite=None" + 
+                        "; Secure" +
+                        "; HttpOnly";  // Added for security
+
+            res.set(http::field::set_cookie, set_cookie);
+            res.version(req.version());
+            res.result(beast::http::status::ok);
+            res.set(http::field::content_type, "application/json");
+            std::string responseBody = R"({"auth": "true", "permission": "true","data": ")" + s_uuid + R"("})";
+            res.body() = responseBody;
+            res.prepare_payload();
+            return;
+
             // next route
             auto user_handle = database::get_connection_by_company(user->get_company());
             auto employee_d = EmployeeController::getEmployeeByContact(user_handle, phone);
@@ -94,13 +112,13 @@ public:
                 return;
             }
 
-            res.version(req.version());
-            res.result(beast::http::status::ok);
-            res.set(http::field::content_type, "application/json");
-            std::string responseBody = R"({"auth": "true", "permission": "true","user": "Admin","data": ")" + s_uuid + R"("})";
-            res.body() = responseBody;
-            res.prepare_payload();
-            return;
+            // res.version(req.version());
+            // res.result(beast::http::status::ok);
+            // res.set(http::field::content_type, "application/json");
+            // std::string responseBody = R"({"auth": "true", "permission": "true","user": "Admin","data": ")" + s_uuid + R"("})";
+            // res.body() = responseBody;
+            // res.prepare_payload();
+            // return;
         }else{
             std::cout << "Called 1" << std::endl;
             res.result(http::status::bad_request);
