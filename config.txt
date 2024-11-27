@@ -1,0 +1,224 @@
+server
+{
+    listen 80;
+	listen 443 ssl http2;
+    server_name majibackend.sisoya.co.tz;
+    index index.php index.html index.htm default.php default.htm default.html;
+    root /www/wwwroot/majibackend.sisoya.co.tz;
+
+    #SSL-START SSL related configuration, do NOT delete or modify the next line of commented-out 404 rules
+    #error_page 404/404.html;
+    #HTTP_TO_HTTPS_START
+    if ($server_port !~ 443){
+        rewrite ^(/.*)$ https://$host$1 permanent;
+    }
+    #HTTP_TO_HTTPS_END
+    ssl_certificate    /www/server/panel/vhost/cert/majibackend.sisoya.co.tz/fullchain.pem;
+    ssl_certificate_key    /www/server/panel/vhost/cert/majibackend.sisoya.co.tz/privkey.pem;
+    ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
+    ssl_ciphers EECDH+CHACHA20:EECDH+CHACHA20-draft:EECDH+AES128:RSA+AES128:EECDH+AES256:RSA+AES256:EECDH+3DES:RSA+3DES:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    add_header Strict-Transport-Security "max-age=31536000";
+    error_page 497  https://$host$request_uri;
+
+    #SSL-END
+
+    #ERROR-PAGE-START  Error page configuration, allowed to be commented, deleted or modified
+    #error_page 404 /404.html;
+    #error_page 502 /502.html;
+    #ERROR-PAGE-END
+
+    #PHP-INFO-START  PHP reference configuration, allowed to be commented, deleted or modified
+    
+
+	#Clear cache
+
+    location ~ /purge(/.*) {
+        proxy_cache_purge cache_one $host$1$is_args$args;
+        #access_log  /www/wwwlogs/majibackend.sisoya.co.tz_purge_cache.log;
+    }
+	#Referenced reverse proxy rule, if commented, the configured reverse proxy will be invalid
+	include /www/server/panel/vhost/nginx/proxy/majibackend.sisoya.co.tz/*.conf;
+
+	#SECURITY-START Hotlink protection configuration
+    location ~ .*\.(jpg|jpeg|gif|png|js|css)$
+    {
+        expires      30d;
+        access_log off;
+        valid_referers majibackend.sisoya.co.tz;
+        if ($invalid_referer){
+           return 404;
+        }
+    }
+    #SECURITY-END
+    include enable-php-00.conf;
+    #PHP-INFO-END
+
+    #REWRITE-START URL rewrite rule reference, any modification will invalidate the rewrite rules set by the panel
+    include /www/server/panel/vhost/rewrite/majibackend.sisoya.co.tz.conf;
+    #REWRITE-END
+
+    # Forbidden files or directories
+    location ~ ^/(\.user.ini|\.htaccess|\.git|\.svn|\.project|LICENSE|README.md)
+    {
+        return 404;
+    }
+
+    # Directory verification related settings for one-click application for SSL certificate
+    location ~ \.well-known{
+        allow all;
+    }
+
+    access_log  /www/wwwlogs/majibackend.sisoya.co.tz.log;
+    error_log  /www/wwwlogs/majibackend.sisoya.co.tz.error.log;
+}
+
+
+server {
+    listen 80;
+    listen 443 ssl http2;
+    server_name majibackend.sisoya.co.tz;
+    index index.php index.html index.htm default.php default.htm default.html;
+    root /www/wwwroot/majibackend.sisoya.co.tz;
+
+    # SSL Configuration
+    ssl_certificate    /www/server/panel/vhost/cert/majibackend.sisoya.co.tz/fullchain.pem;
+    ssl_certificate_key    /www/server/panel/vhost/cert/majibackend.sisoya.co.tz/privkey.pem;
+    ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
+    ssl_ciphers EECDH+CHACHA20:EECDH+CHACHA20-draft:EECDH+AES128:RSA+AES128:EECDH+AES256:RSA+AES256:EECDH+3DES:RSA+3DES:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    add_header Strict-Transport-Security "max-age=31536000";
+    error_page 497 https://$host$request_uri;
+
+    # Redirect HTTP to HTTPS
+    if ($server_port !~ 443) {
+        rewrite ^(/.*)$ https://$host$1 permanent;
+    }
+
+    # Reverse Proxy Configuration
+    location / {
+        proxy_pass http://127.0.0.1:4000;
+
+        # Forwarding Headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Forwarded-Ssl on;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Accept-Encoding '';
+        proxy_set_header Cookie $http_cookie;  # Forward the Cookie header
+    }
+
+    # Clear Cache
+    location ~ /purge(/.*) {
+        proxy_cache_purge cache_one $host$1$is_args$args;
+    }
+
+    # Hotlink Protection
+    location ~ .*\.(jpg|jpeg|gif|png|js|css)$ {
+        expires 30d;
+        access_log off;
+        valid_referers majibackend.sisoya.co.tz;
+        if ($invalid_referer) {
+            return 404;
+        }
+    }
+
+    # PHP Configuration
+    include enable-php-00.conf;
+
+    # URL Rewrite Rules
+    include /www/server/panel/vhost/rewrite/majibackend.sisoya.co.tz.conf;
+
+    # Forbidden Files or Directories
+    location ~ ^/(\.user.ini|\.htaccess|\.git|\.svn|\.project|LICENSE|README.md) {
+        return 404;
+    }
+
+    # Directory Verification for SSL Certificate
+    location ~ \.well-known {
+        allow all;
+    }
+
+    access_log  /www/wwwlogs/majibackend.sisoya.co.tz.log;
+    error_log  /www/wwwlogs/majibackend.sisoya.co.tz.error.log;
+}
+
+
+// new
+ 
+server
+{
+    listen 80;
+	listen 443 ssl http2;
+    server_name loganimaji.co.tz;
+    index index.php index.html index.htm default.php default.htm default.html;
+    root /www/wwwroot/loganimaji.co.tz;
+
+    #SSL-START SSL related configuration, do NOT delete or modify the next line of commented-out 404 rules
+    #error_page 404/404.html;
+    #HTTP_TO_HTTPS_START
+    if ($server_port !~ 443){
+        rewrite ^(/.*)$ https://$host$1 permanent;
+    }
+    #HTTP_TO_HTTPS_END
+    ssl_certificate    /www/server/panel/vhost/cert/loganimaji.co.tz/fullchain.pem;
+    ssl_certificate_key    /www/server/panel/vhost/cert/loganimaji.co.tz/privkey.pem;
+    ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
+    ssl_ciphers EECDH+CHACHA20:EECDH+CHACHA20-draft:EECDH+AES128:RSA+AES128:EECDH+AES256:RSA+AES256:EECDH+3DES:RSA+3DES:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    add_header Strict-Transport-Security "max-age=31536000";
+    error_page 497  https://$host$request_uri;
+
+    #SSL-END
+
+    #ERROR-PAGE-START  Error page configuration, allowed to be commented, deleted or modified
+    #error_page 404 /404.html;
+    #error_page 502 /502.html;
+    #ERROR-PAGE-END
+
+    #PHP-INFO-START  PHP reference configuration, allowed to be commented, deleted or modified
+    include enable-php-80.conf;
+    #PHP-INFO-END
+
+    #REWRITE-START URL rewrite rule reference, any modification will invalidate the rewrite rules set by the panel
+    include /www/server/panel/vhost/rewrite/loganimaji.co.tz.conf;
+    #REWRITE-END
+
+    # Forbidden files or directories
+    location ~ ^/(\.user.ini|\.htaccess|\.git|\.svn|\.project|LICENSE|README.md)
+    {
+        return 404;
+    }
+
+    # Directory verification related settings for one-click application for SSL certificate
+    location ~ \.well-known{
+        allow all;
+    }
+
+    location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$
+    {
+        expires      30d;
+        error_log /dev/null;
+        access_log off;
+    }
+
+    location ~ .*\.(js|css)?$
+    {
+        expires      12h;
+        error_log /dev/null;
+        access_log off; 
+    }
+    access_log  /www/wwwlogs/loganimaji.co.tz.log;
+    error_log  /www/wwwlogs/loganimaji.co.tz.error.log;
+}

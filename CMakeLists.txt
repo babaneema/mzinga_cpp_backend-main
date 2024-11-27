@@ -28,7 +28,8 @@ set(SOURCES
     models/payment-odb.cxx
     models/companies-odb.cxx 
     models/users-odb.cxx
-
+    models/prices-odb.cxx
+    models/tasks-odb.cxx
 )
 
 set(HEADERS
@@ -57,6 +58,10 @@ set(HEADERS
     models/companies-odb.hxx 
     models/users.hxx
     models/users-odb.hxx 
+    models/prices.hxx
+    models/prices-odb.hxx 
+    models/tasks.hxx
+    models/tasks-odb.hxx 
     
     core/database.hxx
     core/server.hxx
@@ -78,6 +83,8 @@ set(HEADERS
     controller/paymentController.hxx
     controller/companiesController.hxx
     controller/usersController.hxx
+    controller/pricesController.hxx
+    controller/taskController.hxx
 
     middleware/jsonparser.hxx
     middleware/session_guard.hxx
@@ -91,6 +98,8 @@ set(HEADERS
     http/paymentHttp.hxx
     http/employeeHttp.hxx
     http/meterReadHtpp.hxx
+    http/priceHttp.hxx
+    http/taskHttp.hxx
 
     # core/date_convert.hxx
 )

@@ -125,6 +125,8 @@ public:
             auto meters_json = MeterHttp::meters_to_json(meters);
             response_json["meters_data"] = meters_json;
 
+            std::cout << customer->get_customer_id() << std::endl;
+
             // Now let get bills data
             auto bills = BillController::getBillsByCustomerId(handle,customer->get_customer_id());
             auto bills_json = BillHttp::bills_to_json(bills);

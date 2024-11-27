@@ -218,6 +218,20 @@ public:
         }
     }
 
+    static boost::shared_ptr<bill> getFullBillByUuid(std::shared_ptr<odb::mysql::database> & db, const std::string & uuid){
+        try{
+            odb::transaction t(db->begin());
+            boost::shared_ptr<bill> bill_data (
+                db->query_one<bill> ( query::bill_unique == uuid));
+            t.commit();
+            return bill_data;
+
+        }catch (const std::exception& e) {
+            std::cerr << "Error here: " << e.what() << std::endl;
+            return nullptr;
+        }
+    }
+
     static bool createBill(std::shared_ptr<odb::mysql::database> & db, boost::shared_ptr<bill> bill_d){
         try{
             odb::transaction t(db->begin());

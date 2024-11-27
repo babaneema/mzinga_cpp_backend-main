@@ -15,8 +15,8 @@
 #include "http/paymentHttp.hxx" 
 #include "http/authHttp.hxx" 
 #include "http/common.hxx"
-
-
+#include "http/priceHttp.hxx" 
+#include "http/taskHttp.hxx" 
 
 #include <boost/shared_ptr.hpp>
 
@@ -29,6 +29,8 @@ int main(int argc, char* argv[]) {
     server::add_allowed_origin("https://admin.mzingamaji.co.tz"); 
     server::add_allowed_origin("https://mzingamaji.co.tz"); 
     server::add_allowed_origin("https://loganimaji.co.tz"); 
+    server::add_allowed_origin("https://majibackend.sisoya.co.tz"); 
+    server::add_allowed_origin("https://maji.sisoya.co.tz"); 
 
     database::load_connections();
     // Initialize the database and add persons http://localhost:5173
@@ -43,6 +45,10 @@ int main(int argc, char* argv[]) {
                                         const std::unordered_map<std::string, std::string>& query_params
                                         ) {
        
+        if (req.method() == http::verb::get){
+            AuthHttp::logout(req,res);
+        }
+
         if(req.method() == http::verb::post){
             AuthHttp::login(req,res);
         }
@@ -53,7 +59,7 @@ int main(int argc, char* argv[]) {
                                                         http::response<http::string_body>& res, 
                                                         const std::unordered_map<std::string, std::string>& query_params
          
-                                                        ) {
+                                                    ) {
         if (req.method() == http::verb::get){
             auto uuid = query_params.find("uuid");
             if(uuid != query_params.end()){
@@ -285,6 +291,51 @@ int main(int argc, char* argv[]) {
             EmployeeHttp::post(req,res);
         }
      
+    });
+
+    register_route("/api/v1/price", [](const http::request<http::string_body>& req, 
+                                    http::response<http::string_body>& res, 
+                                    const std::unordered_map<std::string, std::string>& query_params
+                                    ) {
+        if (req.method() == http::verb::get) {
+            PriceHttp::get(req, res, query_params); // Handle GET request
+        }
+
+        if (req.method() == http::verb::post) {
+            PriceHttp::post(req, res); // Handle POST request
+        }
+
+        if(req.method() == http::verb::delete_){
+            PriceHttp::delete_data(req,res,query_params);
+        }
+
+    });
+
+    register_route("/api/v1/task", [](const http::request<http::string_body>& req, 
+                                    http::response<http::string_body>& res, 
+                                    const std::unordered_map<std::string, std::string>& query_params
+                                    ) {
+        if (req.method() == http::verb::get) {
+            TaskHttp::get(req,res, query_params);
+        }
+
+        if (req.method() == http::verb::post) {
+            TaskHttp::post(req, res); // Handle POST request
+        }
+
+        if(req.method() == http::verb::delete_){
+            PriceHttp::delete_data(req,res,query_params);
+        }
+    });
+
+     register_route("/api/v1/payrol", [](const http::request<http::string_body>& req, 
+                                    http::response<http::string_body>& res, 
+                                    const std::unordered_map<std::string, std::string>& query_params
+                                    ) {
+        if (req.method() == http::verb::post) {
+            TaskHttp::post(req, res); // Handle POST request
+        }
+
     });
   
     auto const threads = std::max<int>(1, boost::thread::hardware_concurrency());

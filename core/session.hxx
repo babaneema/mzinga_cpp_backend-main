@@ -98,24 +98,4 @@ public:
     }
 };
 
-// Definition of the static session_vector
 std::vector<ServerSession::Session> ServerSession::session_vector;
-
-// int main() {
-//     // Example usage
-//     std::string uuid = ServerSession::set_session("123", "192.168.1.1", "CompanyA");
-//     std::cout << "Session UUID: " << uuid << std::endl;
-
-//     bool exists = ServerSession::session_exists(uuid);
-//     std::cout << "Session exists: " << (exists ? "Yes" : "No") << std::endl;
-
-//     auto session = ServerSession::get_session_by_uuid(uuid);
-//     if (session) {
-//         std::cout << "Session found: ID=" << session->id << ", IP=" << session->ip 
-//                   << ", Company=" << session->company << ", UUID=" << session->uuid << std::endl;
-//     } else {
-//         std::cout << "Session not found" << std::endl;
-//     }
-
-//     return 0;
-// }

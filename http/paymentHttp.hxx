@@ -17,7 +17,7 @@
 
 class PaymentHttp {
 public:
-    // Convert a single payment to JSON
+    // Convert a single payment to JSON bill_ptr
     static boost::json::object payment_to_json(const boost::shared_ptr<payments> payment) {
         if (payment) {
             return {
@@ -32,6 +32,9 @@ public:
                 },
                 {
                     "total_cost", payment->get_pay_bill()->get_bill_cost()
+                },
+                {
+                    "pay_bill_id", payment->get_pay_bill()->get_bill_id()
                 }
             };
         }

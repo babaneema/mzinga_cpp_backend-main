@@ -18,6 +18,50 @@
 
 class AuthHttp {
 public:
+    
+    static void logout(
+        const http::request<http::string_body>& req,
+        http::response<http::string_body>& res
+    ){
+        if(req.method() == http::verb::get){
+            logger("AuthHttp::login", "Called");
+            auto session_uuid = ServerSession::check_session_in_request(req);
+            if(session_uuid){
+                // now we can logout
+                if(ServerSession::delete_session_by_uuid(*session_uuid)){
+                    std::cout << "Logout success fuly"<< std::endl;
+                    res.result(http::status::bad_request);
+                    res.set(http::field::content_type, "application/json");
+                    res.body() = R"({"auth": "logout"})";
+                    res.prepare_payload();
+                    return;
+                }else{
+                    std::cout << "Error occured Deleting sessions"<< std::endl;
+                    res.result(http::status::bad_request);
+                    res.set(http::field::content_type, "application/json");
+                    res.body() = R"({"auth": "logout"})";
+                    res.prepare_payload();
+                    return;
+                }
+                
+            }else{
+                // session does not exist
+                std::cout << "session does not exist" << std::endl;
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"auth": "logout"})";
+                res.prepare_payload();
+                return;
+            } 
+        }else{
+            std::cout << "Called 1" << std::endl;
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"auth": "false","error": "Bad Request."})";
+            res.prepare_payload();
+            return;
+        }
+    }
     static void login(
         const http::request<http::string_body>& req,
         http::response<http::string_body>& res
@@ -70,13 +114,7 @@ public:
             }
 
             std::string s_uuid =  ServerSession::set_session_in_response(res, phone, user->get_company());
-            // std::string set_cookie = "uuid=" + s_uuid + "; Path=/; SameSite=None; Secure";
-            std::string set_cookie = "uuid=" + s_uuid + 
-                        "; Domain=majibackend.sisoya.co.tz" +  // Add the common parent domain
-                        "; Path=/" + 
-                        "; SameSite=None" + 
-                        "; Secure" +
-                        "; HttpOnly";  // Added for security
+            std::string set_cookie = "uuid=" + s_uuid + "; Path=/; SameSite=None; Secure";
 
             res.set(http::field::set_cookie, set_cookie);
             res.version(req.version());

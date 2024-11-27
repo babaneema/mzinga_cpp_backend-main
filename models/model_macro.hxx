@@ -6,7 +6,7 @@
     }                                             \
     void set_##field_name(const type& value) {    \
         field_name = value;                       \
-    }                                            
+    }                                             \
 
 #define DEFINE_NON_CONST_GETTER_SETTER(type, field_name)    \
     type get_##field_name() const {                         \

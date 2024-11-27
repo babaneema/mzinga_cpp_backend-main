@@ -73,11 +73,7 @@ namespace server {
             std::string orign_str(origin);
             
             if (allowed_origins.empty() || allowed_origins.find(orign_str) != allowed_origins.end()) {
-                std::cout << "Giving headers " <<endl;
-                // res.set(http::field::access_control_allow_origin, orign_str);
-                // res.set(http::field::access_control_allow_methods, "GET, POST, PUT, DELETE, OPTIONS");
-                // res.set(http::field::access_control_allow_headers, "Content-Type");
-                // res.set(http::field::access_control_allow_credentials, "true");
+                std::cout << "Allowed" <<endl;
 
                 res.set(http::field::access_control_allow_origin, orign_str);
                 res.set(http::field::access_control_allow_methods, allowed_methods);
@@ -86,24 +82,16 @@ namespace server {
                 res.set(http::field::access_control_max_age, std::to_string(max_age));
 
                 // Add these headers for Chrome
-                res.set(http::field::vary, "Origin");  // Important for Chrome
-                res.set(http::field::access_control_expose_headers, "Set-Cookie");
+                // res.set(http::field::vary, "Origin");  // Important for Chrome
+                // res.set(http::field::access_control_expose_headers, "Set-Cookie");
+                return;
 
             } else {
-                std::cout << "This got called " <<endl;
-                // If the origin is not in the allowed list, don't set the header
+                std::cout << "Not Allowed" <<endl;
                 return;
             }
         }
 
-        // res.set(http::field::access_control_allow_methods, allowed_methods);
-        // res.set(http::field::access_control_allow_headers, allowed_headers);
-
-        if (allow_credentials) {
-            res.set(http::field::access_control_allow_credentials, "true");
-        }
-
-        res.set(http::field::access_control_max_age, std::to_string(max_age));
     }
     
     void handle_request(const http::request<http::string_body>& req, http::response<http::string_body>& res) {
@@ -111,7 +99,7 @@ namespace server {
         set_cors_headers(req, res);
 
         if (req.method() == http::verb::options) {
-            // Handle CORS preflight request
+            // set_cors_headers(req, res);
             res.result(http::status::no_content);
             return;
         }
